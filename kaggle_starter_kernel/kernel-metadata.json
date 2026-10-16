@@ -1,0 +1,17 @@
+{
+  "id": "hamadmuhammadkamal/opendiffraction-quickstart-eda-phase-retrieval",
+  "title": "OpenDiffraction: Quickstart, EDA & Phase Retrieval",
+  "code_file": "starter_notebook.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": "false",
+  "enable_gpu": "false",
+  "enable_tpu": "false",
+  "enable_internet": "true",
+  "dataset_sources": [
+    "hamadmuhammadkamal/opendiffraction-synthetic-cdi"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

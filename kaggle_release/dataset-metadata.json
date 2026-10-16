@@ -4,17 +4,157 @@
   "id": "hamadmuhammadkamal/opendiffraction-synthetic-cdi",
   "licenses": [
     {
-      "name": "CC-BY-4.0"
+      "name": "Attribution 4.0 International (CC BY 4.0)"
     }
   ],
   "keywords": [
-    "physics",
-    "computer-vision",
-    "image-processing",
-    "optics",
-    "synthetic-data",
-    "phase-retrieval",
-    "inverse-problems"
+    "physics"
   ],
-  "description": "OpenDiffraction is a physics-based synthetic dataset for coherent diffraction imaging (CDI) and phase retrieval benchmarking. Fully reproducible and compatible with DPR (Nature Comms / npj Comp Mat 2025). GitHub Repository: https://github.com/KindlyGentleman/opendiffraction"
+  "expectedUpdateFrequency": "annually",
+  "description": "# OpenDiffraction: Physics-Based Synthetic Coherent Diffraction Imaging Dataset\n\nOpenDiffraction is a rigorous, open-access, physics-based synthetic dataset for coherent diffraction imaging (CDI), phase retrieval, and scientific machine learning.\n\n- **GitHub Repository**: https://github.com/KindlyGentleman/opendiffraction\n- **Reference Paper**: Lee et al. (2025), *Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers*, npj Computational Materials 11, 68. DOI: [10.1038/s41524-025-01569-7](https://doi.org/10.1038/s41524-025-01569-7)\n\n---\n\n## Data Provenance & Lineage\n\n- **Origin**: Synthetically generated using the OpenDiffraction Python engine (v2.0.0).\n- **Physical Forward Models**: Implements Fraunhofer far-field propagation (F1), corrected Gaussian Schell-model partial coherence (F2), thin-specimen probe transmission (F3), Fresnel near-field propagation (F4), polychromatic spectrum integration (F5), and Bragg nanocrystal diffraction (F6).\n- **Detector Physics**: Simulates Poisson photon shot noise ($10^3$ to $10^7$ photons), additive Gaussian readout noise ($sigma=0.1$ to $5.0$), multi-geometry beamstops (rectangular, circular, cross), detector tile gaps, dead pixels, and saturation thresholds.\n- **Ground Truth**: Real and complex specimen transmission functions across 4 distinct morphological regimes (biological cells/vesicles, crystalline lattice grains, dense porous nanostructures, and smooth geometric shapes).\n- **Reproducibility**: 100% deterministic with recorded per-sample random seeds, strict Parseval energy conservation checks, and CXI (HDF5) compliant data formatting.\n\n---\n\n## Dataset Structure\n\n- `metadata.csv`: Master index of all 1,200 diffraction patterns with physical parameters, forward models, hit types, noise levels, and partition splits.\n- `opendiffraction_benchmark.cxi`: Gold-standard Coherent X-ray Imaging (CXI) standard file compliant with CXIDB specifications.\n- `data/train_000.h5`: Primary training split (720 patterns) containing measured intensities (512x512), binary detector masks (512x512), and ground truth objects (64x64).\n- `data/valid_000.h5`: Validation split (108 patterns) for model tuning and early stopping.\n- `data/test_000.h5`: In-distribution test split (65 patterns) for benchmark evaluation.\n- `data/test_ood_000.h5`: Out-of-distribution stress test split (108 patterns) with extreme photon starvation, heavy occlusions, and severe partial coherence.\n\n---\n\n## 12 Standardized Machine Learning Tasks (T1 \u2013 T12)\n\n1. **T1: Phase Retrieval**: Inverse reconstruction of object amplitude and phase from masked diffraction intensity.\n2. **T2: Diffraction Pattern Denoising**: Poisson and Gaussian noise removal in reciprocal space.\n3. **T3: Detector Inpainting**: Reconstruction of central beamstop and detector gap pixels.\n4. **T4: Hit Finding & Classification**: Classifying single-hit, multi-hit, background, and dark detector frames.\n5. **T5: Detector Defect Segmentation**: Pixel-level binary segmentation of dead and saturated pixels.\n6. **T6: Specimen Morphology Classification**: Multi-class classification of specimen structural families.\n7. **T7: Physical Parameter Estimation**: Regressing incident photon budget and spatial coherence length.\n8. **T8: Out-of-Distribution Anomaly Detection**: Identifying out-of-domain patterns and unexpected physical regimes.\n9. **T9: Domain Generalization**: Model transfer from idealized Fraunhofer to realistic partial coherence.\n10. **T10: Self-Supervised Representation Learning**: Foundation models for diffraction pattern representations.\n11. **T11: Uncertainty Quantification**: Pixel-wise predictive variance and confidence calibration.\n12. **T12: Forward-Inverse Physics Consistency**: Verifying physical consistency via reciprocal-space reprojection ($R$-factor).",
+  "resources": [
+    {
+      "path": "metadata.csv",
+      "description": "Master tabular index of all synthetic diffraction patterns containing physical parameters, forward models, hit types, noise statistics, and split assignments.",
+      "schema": {
+        "fields": [
+          {
+            "name": "sample_id",
+            "type": "string",
+            "description": "Unique sample identifier string (e.g., OD_000000_V01)."
+          },
+          {
+            "name": "source_object_id",
+            "type": "string",
+            "description": "Identifier of the underlying ground-truth specimen morphology."
+          },
+          {
+            "name": "group_id",
+            "type": "string",
+            "description": "Variation group identifier grouping related parameter sweeps."
+          },
+          {
+            "name": "split",
+            "type": "string",
+            "description": "Dataset partition split: train, valid, test, or test_ood."
+          },
+          {
+            "name": "variation_family",
+            "type": "string",
+            "description": "Variation family code (V01 through V30) designating parameter configuration."
+          },
+          {
+            "name": "object_family",
+            "type": "string",
+            "description": "Morphological category of specimen (Real-World Specimens, Illumination and Coherence, Detectors and Noise, etc.)."
+          },
+          {
+            "name": "density_type",
+            "type": "string",
+            "description": "Forward simulation optical model: F1 (Fraunhofer), F2 (Partial Coherence), F3 (Thin Object Probe), F4 (Fresnel), F5 (Polychromatic), F6 (Bragg Nanocrystal)."
+          },
+          {
+            "name": "photon_budget",
+            "type": "number",
+            "description": "Total incident photon count before detector Poisson shot noise sampling."
+          },
+          {
+            "name": "coherence_length",
+            "type": "number",
+            "description": "Spatial coherence length parameter in detector pixel units."
+          },
+          {
+            "name": "readout_noise_std",
+            "type": "number",
+            "description": "Standard deviation of additive Gaussian electronic detector readout noise."
+          },
+          {
+            "name": "beam_stop_geometry",
+            "type": "string",
+            "description": "Geometry of central direct-beam blocker mask (e.g., 16x16 square, circular, cross)."
+          },
+          {
+            "name": "missing_pixel_fraction",
+            "type": "number",
+            "description": "Fraction of detector pixels missing due to beamstop, module gaps, and defect mask."
+          },
+          {
+            "name": "detector_saturation_threshold",
+            "type": "string",
+            "description": "Maximum photon count capacity before detector well saturation (None if unsaturated)."
+          },
+          {
+            "name": "beam_center_offset",
+            "type": "string",
+            "description": "Subpixel coordinate shift (dx, dy) of the incident beam center relative to detector origin."
+          },
+          {
+            "name": "random_seed",
+            "type": "integer",
+            "description": "Deterministic pseudo-random generator seed for exact numerical reproducibility."
+          },
+          {
+            "name": "shard_name",
+            "type": "string",
+            "description": "Name of the target HDF5 container shard containing array data (e.g., train_000.h5)."
+          },
+          {
+            "name": "row_index",
+            "type": "integer",
+            "description": "Zero-based row index within the HDF5 shard container."
+          },
+          {
+            "name": "simulation_version",
+            "type": "string",
+            "description": "OpenDiffraction simulation engine release version (e.g., 2.0.0)."
+          },
+          {
+            "name": "model_compatibility",
+            "type": "string",
+            "description": "Downstream benchmark model target compatibility label (e.g., DPR_and_Standard_CDI)."
+          }
+        ]
+      }
+    },
+    {
+      "path": "opendiffraction_benchmark.cxi",
+      "description": "Gold-standard Coherent X-ray Imaging (CXI) file compliant with CXIDB specifications containing instrument geometry, source properties, detector masks, and 512x512 diffraction patterns."
+    },
+    {
+      "path": "data/train_000.h5",
+      "description": "Primary training HDF5 shard containing measured intensities (512x512), binary detector masks (512x512), and ground truth objects (64x64)."
+    },
+    {
+      "path": "data/valid_000.h5",
+      "description": "Validation HDF5 shard for hyperparameter tuning, model checkpointing, and validation metrics."
+    },
+    {
+      "path": "data/test_000.h5",
+      "description": "In-distribution test HDF5 shard for standardized evaluation of phase retrieval and inverse models."
+    },
+    {
+      "path": "data/test_ood_000.h5",
+      "description": "Out-of-distribution stress testing HDF5 shard with extreme photon starvation, heavy occlusion, and severe partial coherence."
+    },
+    {
+      "path": "README.md",
+      "description": "Dataset overview, directory structure, physical model descriptions, quickstart Python code, and academic citation guide."
+    },
+    {
+      "path": "DATASET_CARD.md",
+      "description": "Standardized ML dataset card documenting dataset summary, intended use, limitations, bias analysis, and ethical considerations."
+    },
+    {
+      "path": "DATASHEET.md",
+      "description": "Gebru et al. standard datasheet covering motivation, composition, collection process, preprocessing, uses, and distribution."
+    },
+    {
+      "path": "CITATION.cff",
+      "description": "Citation File Format specification providing BibTeX and APA citations for academic attribution."
+    },
+    {
+      "path": "LICENSE",
+      "description": "Creative Commons Attribution 4.0 International (CC BY 4.0) open science license terms."
+    }
+  ]
 }
