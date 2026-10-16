@@ -60,7 +60,7 @@ OpenDiffraction produces datasets that are directly compatible with the Deep Pha
 
 ### Installation
 ```bash
-git clone https://github.com/muham/opendiffraction.git
+git clone https://github.com/KindlyGentleman/opendiffraction.git
 cd opendiffraction
 pip install -e .
 ```
