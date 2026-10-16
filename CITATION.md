@@ -10,19 +10,18 @@ To cite the synthetic dataset itself:
 
 ### BibTeX
 ```bibtex
-@misc{kamal2026opendiffraction_dataset,
-  author       = {Kamal, Muhammad},
-  title        = {OpenDiffraction: Physics-Based Synthetic Diffraction Imaging Dataset},
-  year         = {2026},
-  version      = {2.0.0},
-  publisher    = {Kaggle},
-  url          = {https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi},
-  note         = {Open-access synthetic coherent diffraction imaging dataset and inverse benchmark}
+@misc{muhammad_kamal_2026,
+  author    = {Muhammad Kamal},
+  title     = {OpenDiffraction: Synthetic CDI Patterns},
+  year      = {2026},
+  publisher = {Kaggle},
+  url       = {https://www.kaggle.com/dsv/20811988},
+  doi       = {10.34740/kaggle/dsv/20811988}
 }
 ```
 
 ### APA Style
-> Kamal, M. (2026). *OpenDiffraction: Physics-Based Synthetic Diffraction Imaging Dataset* (Version 2.0.0) [Data set]. Kaggle. https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi
+> Kamal, M. (2026). *OpenDiffraction: Synthetic CDI Patterns* [Data set]. Kaggle. https://doi.org/10.34740/kaggle/dsv/20811988
 
 ---
 
