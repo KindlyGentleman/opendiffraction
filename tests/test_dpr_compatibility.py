@@ -5,7 +5,9 @@ import sys
 import tempfile
 import numpy as np
 import pytest
-import torch
+
+torch = pytest.importorskip("torch")
+
 
 from opendiffraction.generator.pipeline import generate_dataset
 from opendiffraction.physics.forward import SimulationConfig, simulate_diffraction

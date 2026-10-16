@@ -7,8 +7,15 @@ import os
 from typing import Any, Callable
 import h5py
 import numpy as np
-import torch
-from torch.utils.data import Dataset
+
+try:
+    import torch
+    from torch.utils.data import Dataset
+    HAS_TORCH = True
+except ImportError:
+    torch = None  # type: ignore
+    Dataset = object  # type: ignore
+    HAS_TORCH = False
 
 from opendiffraction.version import GENERATOR_VERSION, SCHEMA_VERSION
 
@@ -41,13 +48,19 @@ class OpenDiffractionTorchDataset(Dataset):
         root: str,
         split: str | None = "train",
         task: str = "phase_retrieval",
-        transform: Callable[[torch.Tensor], torch.Tensor] | None = None,
+        transform: Callable[[Any], Any] | None = None,
         target_transform: Callable[[Any], Any] | None = None,
         family: str | None = None,
         variation: str | None = None,
         return_dict: bool = False,
     ) -> None:
+        if not HAS_TORCH:
+            raise ImportError(
+                "PyTorch is required to use OpenDiffractionTorchDataset. "
+                "Install it with 'pip install torch' or 'pip install opendiffraction[dev]'."
+            )
         super().__init__()
+
         self.root = os.path.abspath(root)
         self.split = split
         self.task = task

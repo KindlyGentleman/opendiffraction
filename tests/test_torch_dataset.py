@@ -5,8 +5,10 @@ import tempfile
 import h5py
 import numpy as np
 import pytest
-import torch
+
+torch = pytest.importorskip("torch")
 from torch.utils.data import DataLoader
+
 
 from opendiffraction.generator.pipeline import generate_dataset
 from opendiffraction.io.torch_dataset import OpenDiffractionTorchDataset
