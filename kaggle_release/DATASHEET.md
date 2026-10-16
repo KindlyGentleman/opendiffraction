@@ -9,9 +9,9 @@ Following the recommended format from Gebru et al. (2021), *"Datasheets for Data
 - **For what purpose was the dataset created?**  
   To provide an open, transparent, fully reproducible, physics-based benchmark dataset for coherent diffraction imaging (CDI), phase retrieval, and detector defect inpainting without proprietary third-party image licensing restrictions.
 - **Who created the dataset?**  
-  OpenDiffraction computational optics and scientific machine learning contributors.
-- **Who funded the creation of the dataset?**  
-  Open research initiative with self-hosted computational resources.
+  OpenDiffraction computational optics and scientific machine learning contributors (Principal maintainer: Muhammad Kamal, GitHub: `@KindlyGentleman`, Kaggle: `@hamadmuhammadkamal`).
+- **Who funded or supported the creation of the dataset?**  
+  Conducted as part of internship research acknowledging the Femtosecond X-ray Diffraction and Imaging (FXDI) Laboratory at Pohang University of Science and Technology (POSTECH).
 
 ---
 
@@ -77,6 +77,8 @@ Following the recommended format from Gebru et al. (2021), *"Datasheets for Data
   2026.
 - **What license is the dataset distributed under?**  
   Creative Commons Attribution 4.0 International (CC BY 4.0).
+- **What is the dataset DOI?**  
+  [10.34740/kaggle/dsv/20811988](https://doi.org/10.34740/kaggle/dsv/20811988) (Kaggle Dataset Version DOI).
 - **Have any third parties imposed intellectual property constraints?**  
   No. The procedural generation pipeline has zero dependencies on external copyrighted image datasets (EMNIST, CIFAR-100, or NVIDIA masks).
 

@@ -4,9 +4,11 @@
 **OpenDiffraction: Physics-Based Synthetic Coherent Diffraction Patterns for Phase Retrieval and Image Reconstruction**
 
 - **Dataset Version**: 2.0.0
+- **Creator & Principal Maintainer**: OpenDiffraction computational optics and scientific machine learning contributors (Principal Maintainer: [Muhammad Kamal](https://github.com/KindlyGentleman), GitHub: `@KindlyGentleman`, Kaggle: `@hamadmuhammadkamal`)
+- **Dataset DOI**: [10.34740/kaggle/dsv/20811988](https://doi.org/10.34740/kaggle/dsv/20811988)
 - **Primary Domain**: Coherent Diffraction Imaging (CDI), Computational Optics, Phase Retrieval, Machine Learning Inverse Problems
 - **License**: Creative Commons Attribution 4.0 International (CC BY 4.0)
-- **Primary Reference Paper**: Lee et al. (2025), *"Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers"*, Nature Communications / npj Computational Materials, DOI: [10.1038/s41524-025-01569-7](https://doi.org/10.1038/s41524-025-01569-7).
+- **Primary Reference Paper**: Lee et al. (2025), *"Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers"*, npj Computational Materials 11, 68, DOI: [10.1038/s41524-025-01569-7](https://doi.org/10.1038/s41524-025-01569-7).
 - **Reference Repository**: [https://github.com/sungyun98/DPR](https://github.com/sungyun98/DPR) (BSD 2-Clause License)
 - **CXI Standard**: [https://cxidb.org/cxi.html](https://cxidb.org/cxi.html)
 
@@ -233,3 +235,25 @@ Phase retrieval from a single diffraction modulus $|A(\mathbf{q})|$ is fundament
 3. **Twin Image Inversion**: $O(\mathbf{r}) \to O^*(-\mathbf{r})$
 
 Benchmarking pipelines must align reconstructions via cross-correlation and check both direct and twin-image orientations before computing PSNR, SSIM, or R-factor metrics.
+
+---
+
+## 10. Citation & Acknowledgments
+
+If you use OpenDiffraction in your research or benchmarks, please cite:
+```bibtex
+@misc{muhammad_kamal_2026,
+  author    = {Muhammad Kamal},
+  title     = {OpenDiffraction: Synthetic CDI Patterns},
+  year      = {2026},
+  publisher = {Kaggle},
+  url       = {https://www.kaggle.com/dsv/20811988},
+  doi       = {10.34740/kaggle/dsv/20811988}
+}
+```
+
+### Acknowledgments & Research Lineage
+OpenDiffraction was developed by Muhammad Kamal and the OpenDiffraction computational optics and scientific machine learning contributors as part of **internship research acknowledging the Femtosecond X-ray Diffraction and Imaging (FXDI) Laboratory** at Pohang University of Science and Technology (POSTECH).
+
+### Non-Endorsement & Independence Disclosure
+OpenDiffraction is an independently developed research data and benchmark software project. It is not an official commercial product or institutional publication of POSTECH or the authors of DPR. None of these entities have officially endorsed or approved OpenDiffraction; references to published academic literature, institutions, and upstream repositories are provided for scholarly provenance and scientific acknowledgment.

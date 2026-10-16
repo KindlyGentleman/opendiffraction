@@ -8,7 +8,11 @@ version: 2.0.0
 date-released: 2026-10-16
 url: "https://github.com/KindlyGentleman/opendiffraction"
 repository-code: "https://github.com/KindlyGentleman/opendiffraction"
+doi: "10.34740/kaggle/dsv/20811988"
 identifiers:
+  - type: doi
+    value: "10.34740/kaggle/dsv/20811988"
+    description: "Kaggle Dataset Version DOI"
   - type: url
     value: "https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi"
     description: "Kaggle Dataset Repository"

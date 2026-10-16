@@ -1,16 +1,16 @@
 # Acknowledgments & Research Lineage
 
-OpenDiffraction was created and is maintained by **Muhammad Kamal** as an independent, physics-based synthetic diffraction imaging and machine-learning benchmark project.
+OpenDiffraction was created and maintained by **Muhammad Kamal** and the **OpenDiffraction computational optics and scientific machine learning contributors** as part of **internship research acknowledging the Femtosecond X-ray Diffraction and Imaging (FXDI) Laboratory** at Pohang University of Science and Technology (POSTECH).
 
 ---
 
-## Scientific Acknowledgment
+## Scientific Acknowledgment & Foundational Inspiration
 
-The project is inspired by published research on coherent X-ray diffraction imaging, $k$-space denoising, and deep-learning phase retrieval, particularly the foundational work of:
+The project was conducted as internship research inspired by published research on coherent X-ray diffraction imaging, $k$-space denoising, and deep-learning phase retrieval, particularly the foundational work of:
 
 **Sung Yun Lee, Do Hyung Cho, Chulho Jung, Daeho Sung, Daewoong Nam, Sangsoo Kim, and Changyong Song**
 
-The author acknowledges the pioneering scientific contributions of the research community associated with femtosecond X-ray diffraction and imaging at Pohang University of Science and Technology (POSTECH), including the foundational Deep Phase Retrieval (DPR) research.
+The author gratefully acknowledges the scientific mentorship, context, and foundational research community associated with the Femtosecond X-ray Diffraction and Imaging (FXDI) Laboratory at Pohang University of Science and Technology (POSTECH), including the foundational Deep Phase Retrieval (DPR) research.
 
 ### Relevant Research Group & Publications:
 - **Research Laboratory**: Femtosecond X-ray Diffraction and Imaging (FXDI) Laboratory, Department of Physics, Pohang University of Science and Technology (POSTECH)

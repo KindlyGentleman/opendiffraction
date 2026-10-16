@@ -5,9 +5,10 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Physics: Fraunhofer CDI](https://img.shields.io/badge/physics-Fraunhofer_CDI-green.svg)](https://doi.org/10.1038/s41524-025-01569-7)
 
-**Creator & Principal Maintainer:** [Muhammad Kamal](https://github.com/KindlyGentleman) (GitHub: `@KindlyGentleman`, Kaggle: `@hamadmuhammadkamal`)  
+**Creator & Principal Maintainer:** OpenDiffraction computational optics and scientific machine learning contributors (Principal Maintainer: [Muhammad Kamal](https://github.com/KindlyGentleman), GitHub: `@KindlyGentleman`, Kaggle: `@hamadmuhammadkamal`)  
 **GitHub Repository:** [https://github.com/KindlyGentleman/opendiffraction](https://github.com/KindlyGentleman/opendiffraction)  
-**Kaggle Dataset:** [https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi](https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi)
+**Kaggle Dataset:** [https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi](https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi)  
+**Dataset DOI:** [10.34740/kaggle/dsv/20811988](https://doi.org/10.34740/kaggle/dsv/20811988)
 
 ---
 
@@ -32,7 +33,7 @@
 OpenDiffraction produces datasets that are directly compatible with the Deep Phase Retrieval ([DPR](https://github.com/sungyun98/DPR)) neural network while offering an extended scientific format containing unscaled physical ground-truth objects, uncorrupted ideal intensities, expected photon rates, and complete experimental manifests.
 
 <p align="center">
-  <img src="examples/figure_1_workflow.png" width="100%" alt="OpenDiffraction Simulation Pipeline and Experimental Degradations">
+  <img src="https://raw.githubusercontent.com/KindlyGentleman/opendiffraction/main/assets/figure_1_workflow.png" width="100%" alt="OpenDiffraction Simulation Pipeline and Experimental Degradations">
 </p>
 <p align="center">
   <em>Figure 1: Complete physics forward simulation pipeline from real-space ground-truth specimen density through coherent / partially coherent wavefield propagation down to photon-counting statistics, Gaussian electronics noise, central beamstop shadows, and detector defects.</em>
@@ -51,7 +52,7 @@ OpenDiffraction produces datasets that are directly compatible with the Deep Pha
    - **Model F6**: 3D particle scattering from scalar volumes with continuous Euler rotations and Born projection approximation.
 
 <p align="center">
-  <img src="examples/figure_7_models_f1_to_f6.png" width="95%" alt="Forward Models F1 to F6">
+  <img src="https://raw.githubusercontent.com/KindlyGentleman/opendiffraction/main/assets/figure_7_models_f1_to_f6.png" width="95%" alt="Forward Models F1 to F6">
 </p>
 <p align="center">
   <em>Figure 2: Forward physics simulation models F1 through F6 capturing Fraunhofer diffraction, Gaussian Schell-model partial spatial coherence, probe wavefront aberrations, SI-unit Fresnel diffraction, polychromatic energy bandwidth, and 3D Euler rotations with Born projection.</em>
@@ -66,7 +67,7 @@ OpenDiffraction produces datasets that are directly compatible with the Deep Pha
    - **Group 6 (V43 - V48)**: Advanced Physics & Out-of-Distribution (pure phase objects, strong vortices, 3D rotations, compound stress regimes).
 
 <p align="center">
-  <img src="examples/figure_2_specimens.png" width="95%" alt="Synthetic Specimen Morphologies">
+  <img src="https://raw.githubusercontent.com/KindlyGentleman/opendiffraction/main/assets/figure_2_specimens.png" width="95%" alt="Synthetic Specimen Morphologies">
 </p>
 <p align="center">
   <em>Figure 3: Synthetic specimen phantoms spanning biological structures (cells, viruses, protein clusters) to nanomaterials (core-shell nanoparticles, nanorods, colloidal crystals, internal fracture defects).</em>
@@ -95,14 +96,14 @@ OpenDiffraction produces datasets that are directly compatible with the Deep Pha
    - T12: Physics-Consistent Inversion
 
 <p align="center">
-  <img src="examples/figure_10_phase_retrieval.png" width="90%" alt="Phase Retrieval Baseline Reconstruction">
+  <img src="https://raw.githubusercontent.com/KindlyGentleman/opendiffraction/main/assets/figure_10_phase_retrieval.png" width="90%" alt="Phase Retrieval Baseline Reconstruction">
 </p>
 <p align="center">
   <em>Figure 4: Baseline iterative phase retrieval (HIO + ER) achieving real-space object reconstruction and phase-ambiguity alignment from masked diffraction intensities alone.</em>
 </p>
 
 <p align="center">
-  <img src="examples/figure_16_tasks_summary.png" width="90%" alt="12 Machine Learning Benchmark Tasks">
+  <img src="https://raw.githubusercontent.com/KindlyGentleman/opendiffraction/main/assets/figure_16_tasks_summary.png" width="90%" alt="12 Machine Learning Benchmark Tasks">
 </p>
 <p align="center">
   <em>Figure 5: 12 standardized machine learning benchmark tasks (T1 to T12) establishing evaluation protocols across inverse imaging, denoising, hit-finding, and domain adaptation.</em>
@@ -155,15 +156,17 @@ If you use OpenDiffraction in your work, please cite the dataset and foundationa
 
 ### Citing the Dataset
 ```bibtex
-@misc{kamal2026opendiffraction,
-  author       = {Kamal, Muhammad},
-  title        = {{OpenDiffraction: Physics-Based Synthetic Diffraction Imaging Dataset}},
-  year         = {2026},
-  publisher    = {GitHub \& Kaggle},
-  howpublished = {\url{https://github.com/KindlyGentleman/opendiffraction}},
-  note         = {Kaggle: \url{https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi}}
+@misc{muhammad_kamal_2026,
+  author    = {Muhammad Kamal},
+  title     = {OpenDiffraction: Synthetic CDI Patterns},
+  year      = {2026},
+  publisher = {Kaggle},
+  url       = {https://www.kaggle.com/dsv/20811988},
+  doi       = {10.34740/kaggle/dsv/20811988}
 }
 ```
+
+> Kamal, M. (2026). *OpenDiffraction: Synthetic CDI Patterns* [Data set]. Kaggle. https://doi.org/10.34740/kaggle/dsv/20811988
 
 ### Foundational DPR Scientific Reference
 ```bibtex
@@ -182,9 +185,12 @@ If you use OpenDiffraction in your work, please cite the dataset and foundationa
 
 ---
 
-## Non-Endorsement & Independence Disclosure
+## Acknowledgments & Research Lineage
 
-OpenDiffraction was independently created and curated by Muhammad Kamal as an open-source synthetic dataset and scientific benchmark. It is not an official project of Pohang University of Science and Technology (POSTECH), the FXDI research group, or the authors of DPR. None of these entities have reviewed, approved, funded, or endorsed OpenDiffraction.
+OpenDiffraction was developed by Muhammad Kamal and the OpenDiffraction computational optics and scientific machine learning contributors as part of **internship research acknowledging the Femtosecond X-ray Diffraction and Imaging (FXDI) Laboratory** at Pohang University of Science and Technology (POSTECH).
+
+### Non-Endorsement & Institutional Independence Disclosure
+OpenDiffraction was independently created and curated by Muhammad Kamal as an open-source synthetic dataset and scientific benchmark. It is not an official commercial product or institutional publication of Pohang University of Science and Technology (POSTECH), the FXDI research group, or the authors of DPR. None of these entities have officially endorsed or approved OpenDiffraction; references to published academic literature, institutions, and upstream repositories are provided for scholarly provenance and scientific acknowledgment.
 
 ---
 

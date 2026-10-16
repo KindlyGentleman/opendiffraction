@@ -6,9 +6,10 @@
 [![Physics: Fraunhofer CDI](https://img.shields.io/badge/physics-Fraunhofer_CDI-green.svg)](https://doi.org/10.1038/s41524-025-01569-7)
 [![Kaggle Dataset](https://img.shields.io/badge/Kaggle-opendiffraction--synthetic--cdi-20BEFF.svg)](https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi)
 
-**Creator & Principal Maintainer:** [Muhammad Kamal](https://github.com/KindlyGentleman) (GitHub: `@KindlyGentleman`, Kaggle: `@hamadmuhammadkamal`)  
+**Creator & Principal Maintainer:** OpenDiffraction computational optics and scientific machine learning contributors (Principal Maintainer: [Muhammad Kamal](https://github.com/KindlyGentleman), GitHub: `@KindlyGentleman`, Kaggle: `@hamadmuhammadkamal`)  
 **Repository:** [https://github.com/KindlyGentleman/opendiffraction](https://github.com/KindlyGentleman/opendiffraction)  
-**Kaggle Dataset:** [https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi](https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi)
+**Kaggle Dataset:** [https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi](https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi)  
+**Dataset DOI:** [10.34740/kaggle/dsv/20811988](https://doi.org/10.34740/kaggle/dsv/20811988)
 
 ---
 
@@ -187,15 +188,17 @@ If you use OpenDiffraction in your research, machine learning benchmarks, or edu
 
 ### Citing the Dataset
 ```bibtex
-@misc{kamal2026opendiffraction,
-  author       = {Kamal, Muhammad},
-  title        = {{OpenDiffraction: Physics-Based Synthetic Diffraction Imaging Dataset}},
-  year         = {2026},
-  publisher    = {GitHub \& Kaggle},
-  howpublished = {\url{https://github.com/KindlyGentleman/opendiffraction}},
-  note         = {Kaggle: \url{https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi}}
+@misc{muhammad_kamal_2026,
+  author    = {Muhammad Kamal},
+  title     = {OpenDiffraction: Synthetic CDI Patterns},
+  year      = {2026},
+  publisher = {Kaggle},
+  url       = {https://www.kaggle.com/dsv/20811988},
+  doi       = {10.34740/kaggle/dsv/20811988}
 }
 ```
+
+> Kamal, M. (2026). *OpenDiffraction: Synthetic CDI Patterns* [Data set]. Kaggle. https://doi.org/10.34740/kaggle/dsv/20811988
 
 ### Foundational Inspiration & Scientific Reference
 OpenDiffraction was inspired by and benchmarked against Deep Phase Retrieval (DPR) developed by Sung Yun Lee et al.:
@@ -215,9 +218,12 @@ OpenDiffraction was inspired by and benchmarked against Deep Phase Retrieval (DP
 
 ---
 
-## Non-Endorsement & Independence Disclosure
+## Acknowledgments & Research Lineage
 
-OpenDiffraction was independently created and maintained by Muhammad Kamal as an open-source synthetic dataset and scientific benchmark. It is not an official project of Pohang University of Science and Technology (POSTECH), the FXDI research group, or the authors of DPR. None of these entities have reviewed, approved, funded, or endorsed OpenDiffraction.
+OpenDiffraction was developed by Muhammad Kamal and the OpenDiffraction computational optics and scientific machine learning contributors as part of **internship research acknowledging the Femtosecond X-ray Diffraction and Imaging (FXDI) Laboratory** at Pohang University of Science and Technology (POSTECH).
+
+### Non-Endorsement & Institutional Independence Disclosure
+OpenDiffraction is an independently developed research data and benchmark software project. It is not an official commercial product or institutional publication of POSTECH or the authors of DPR. None of these entities have officially endorsed or approved OpenDiffraction; references to published academic literature, institutions, and upstream repositories are provided for scholarly provenance and scientific acknowledgment.
 
 ---
 
