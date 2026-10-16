@@ -9,6 +9,13 @@
 
 OpenDiffraction produces datasets that are directly compatible with the Deep Phase Retrieval ([DPR](https://github.com/sungyun98/DPR)) neural network while offering an extended scientific format containing unscaled physical ground-truth objects, uncorrupted ideal intensities, expected photon rates, and complete experimental manifests.
 
+<p align="center">
+  <img src="assets/figure_1_workflow.png" width="100%" alt="OpenDiffraction Simulation Pipeline and Experimental Degradations">
+</p>
+<p align="center">
+  <em>Figure 1: Complete physics forward simulation pipeline from real-space ground-truth specimen density through coherent / partially coherent wavefield propagation down to photon-counting statistics, Gaussian electronics noise, central beamstop shadows, and detector defects.</em>
+</p>
+
 ---
 
 ## Key Features
@@ -21,6 +28,13 @@ OpenDiffraction produces datasets that are directly compatible with the Deep Pha
    - **Model F5**: Polychromatic pink-beam diffraction with wavelength-dependent reciprocal-space coordinate dilation.
    - **Model F6**: 3D particle scattering from scalar volumes with continuous Euler rotations and Born projection approximation.
 
+<p align="center">
+  <img src="assets/figure_7_models_f1_to_f6.png" width="95%" alt="Forward Models F1 to F6">
+</p>
+<p align="center">
+  <em>Figure 2: Forward physics simulation models F1 through F6 capturing Fraunhofer diffraction, Gaussian Schell-model partial spatial coherence, probe wavefront aberrations, SI-unit Fresnel diffraction, polychromatic energy bandwidth, and 3D Euler rotations with Born projection.</em>
+</p>
+
 2. **48 Controlled Experimental Variation Profiles (V01 - V48)**:
    - **Group 1 (V01 - V12)**: Real-World Specimens (cells, viruses, protein aggregates, core-shell nanoparticles, nanorods, porous aerogels, colloidal assemblies, lithography, cracks).
    - **Group 2 (V13 - V20)**: Illumination & Coherence (plane waves, moderate/low coherence, asymmetric coherence, wavefront curvature, pointing jitter, pink beams).
@@ -28,6 +42,13 @@ OpenDiffraction produces datasets that are directly compatible with the Deep Pha
    - **Group 4 (V31 - V36)**: Background & Parasitic Scattering (gas scattering, carbon film halos, solvent rings, slit flare, cosmic ray hits).
    - **Group 5 (V37 - V42)**: Acquisition & Hit Finding (high-flux hits, low-flux hits, beam centering, multi-particle hits, empty jet non-hits).
    - **Group 6 (V43 - V48)**: Advanced Physics & Out-of-Distribution (pure phase objects, strong vortices, 3D rotations, compound stress regimes).
+
+<p align="center">
+  <img src="assets/figure_2_specimens.png" width="95%" alt="Synthetic Specimen Morphologies">
+</p>
+<p align="center">
+  <em>Figure 3: Synthetic specimen phantoms spanning biological structures (cells, viruses, protein clusters) to nanomaterials (core-shell nanoparticles, nanorods, colloidal crystals, internal fracture defects).</em>
+</p>
 
 3. **6 Acquisition Scenarios (S1 - S6)**:
    - **S1 (XFEL Single-Particle)**: Femtosecond pulses, low photon counts, high partial coherence.
@@ -50,6 +71,20 @@ OpenDiffraction produces datasets that are directly compatible with the Deep Pha
    - T10: Self-Supervised Representation Learning
    - T11: Phase Uncertainty Quantification
    - T12: Physics-Consistent Inversion
+
+<p align="center">
+  <img src="assets/figure_10_phase_retrieval.png" width="90%" alt="Phase Retrieval Baseline Reconstruction">
+</p>
+<p align="center">
+  <em>Figure 4: Baseline iterative phase retrieval (HIO + ER) achieving real-space object reconstruction and phase-ambiguity alignment from masked diffraction intensities alone.</em>
+</p>
+
+<p align="center">
+  <img src="assets/figure_16_tasks_summary.png" width="90%" alt="12 Machine Learning Benchmark Tasks">
+</p>
+<p align="center">
+  <em>Figure 5: 12 standardized machine learning benchmark tasks (T1 to T12) establishing evaluation protocols across inverse imaging, denoising, hit-finding, and domain adaptation.</em>
+</p>
 
 5. **Official CXI Format Support**:
    - NeXus-compliant CXI (`.cxi`) export conforming to CXIDB standards (`cxidb.org/cxi.html`).
