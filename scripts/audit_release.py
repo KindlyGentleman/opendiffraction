@@ -135,7 +135,16 @@ class AuditRunner:
                 "10.1038/nmeth.2110",
             ]
             all_dois = all(d in content for d in dois)
-            self.log(7, "REFERENCES.bib DOIs", all_dois, f"All {len(dois)} foundational literature DOIs verified")
+            # Ensure zero fabricated or placeholder Zenodo DOIs exist in release materials
+            no_fake_doi = True
+            for fname in ["README.md", os.path.join("kaggle_release", "README.md"), os.path.join("kaggle_release", "dataset-metadata.json")]:
+                fpath = os.path.join(REPO_ROOT, fname)
+                if os.path.exists(fpath):
+                    with open(fpath, "r", encoding="utf-8") as fc:
+                        ftext = fc.read().lower()
+                        if "19018440" in ftext or "zenodo" in ftext:
+                            no_fake_doi = False
+            self.log(7, "REFERENCES.bib DOIs & Zero Fake DOIs", all_dois and no_fake_doi, f"All {len(dois)} foundational literature DOIs verified and zero fake Zenodo DOIs found")
         else:
             self.log(7, "REFERENCES.bib DOIs", False, "REFERENCES.bib missing")
 

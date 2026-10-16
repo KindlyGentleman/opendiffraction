@@ -18,7 +18,7 @@
 | Rule 04 | Third-Party Notices | **PASSED** | DPR upstream commit SHA and BSD notice verified |
 | Rule 05 | CITATION.cff Validity & Attribution | **PASSED** | Muhammad Kamal creator & 7 real DPR authors verified |
 | Rule 06 | CITATION.md Reference Guide | **PASSED** | BibTeX and APA references verified |
-| Rule 07 | REFERENCES.bib DOIs | **PASSED** | All 5 foundational literature DOIs verified |
+| Rule 07 | REFERENCES.bib DOIs & Zero Fake DOIs | **PASSED** | All 5 foundational literature DOIs verified and zero fake Zenodo DOIs found |
 | Rule 08 | ACKNOWLEDGMENTS.md Independence Notice | **PASSED** | Non-endorsement disclosure verified |
 | Rule 09 | Source Provenance Document | **PASSED** | Zero proprietary dataset dependency verified |
 | Rule 10 | pyproject.toml Package Metadata | **PASSED** | Muhammad Kamal author & repository URLs verified |

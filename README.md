@@ -193,7 +193,7 @@ If you use OpenDiffraction in your research, machine learning benchmarks, or edu
   year         = {2026},
   publisher    = {GitHub \& Kaggle},
   howpublished = {\url{https://github.com/KindlyGentleman/opendiffraction}},
-  doi          = {10.5281/zenodo.19018440}
+  note         = {Kaggle: \url{https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi}}
 }
 ```
 
