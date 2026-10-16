@@ -551,31 +551,92 @@ def plot_figure_16_tasks_summary(output_dir: Path) -> None:
     setup_style()
     from opendiffraction.tasks.manifests import TASK_DEFINITIONS
 
-    fig, ax = plt.subplots(figsize=(10, 5.5))
+    fig, ax = plt.subplots(figsize=(15, 8.5), dpi=300)
     ax.axis("off")
+
+    headers = [
+        "Task ID",
+        "Task Name",
+        "Problem Type",
+        "Input Modalities",
+        "Target Modalities",
+        "Primary Metric",
+    ]
 
     rows = []
     for t_id, t in TASK_DEFINITIONS.items():
-        rows.append([
-            t_id,
-            t["name"],
-            t["type"],
-            ", ".join(t["input_modalities"]),
-            ", ".join(t["target_modalities"]),
-            t["primary_metric"],
-        ])
+        name = (
+            t["name"]
+            .replace(" (", "\n(")
+            .replace(" vs ", "\nvs ")
+            .replace("Pattern Denoising", "Pattern\nDenoising")
+            .replace("and Classification", "and\nClassification")
+            .replace("Defect Segmentation", "Defect\nSegmentation")
+            .replace("Morphology Classification", "Morphology\nClassification")
+            .replace("Parameter Estimation", "Parameter\nEstimation")
+            .replace("Anomaly Detection", "Anomaly\nDetection")
+            .replace("Representation Learning", "Representation\nLearning")
+            .replace("Forward-Inverse Physics Consistency", "Forward-Inverse\nPhysics Consistency")
+        )
+        ptype = (
+            t["type"]
+            .replace("_", " ")
+            .title()
+            .replace("Probabilistic Inverse Problem", "Probabilistic\nInverse Problem")
+            .replace("Semantic Segmentation", "Semantic\nSegmentation")
+            .replace("Self-Supervised Learning", "Self-Supervised\nLearning")
+        )
+        inputs = ",\n".join(t["input_modalities"])
+        targets = ",\n".join(t["target_modalities"])
+        metric = t["primary_metric"].upper()
+        if len(metric) > 18:
+            metric = (
+                metric
+                .replace("TRANSFER_DEGRADATION_RATIO", "TRANSFER_DEGRADATION_\nRATIO")
+                .replace("EXPECTED_CALIBRATION_ERROR", "EXPECTED_CALIBRATION_\nERROR")
+            )
+
+        rows.append([t_id, name, ptype, inputs, targets, metric])
+
+    col_widths = [0.05, 0.22, 0.18, 0.18, 0.18, 0.19]
 
     table = ax.table(
         cellText=rows,
-        colLabels=["Task ID", "Name", "Problem Type", "Input Modalities", "Target Modalities", "Primary Metric"],
+        colLabels=headers,
+        colWidths=col_widths,
         loc="center",
-        cellLoc="center",
+        cellLoc="left",
+        bbox=[0.02, 0.04, 0.96, 0.86],
     )
-    table.auto_set_font_size(False)
-    table.set_fontsize(7.5)
-    table.scale(1.0, 1.5)
 
-    ax.set_title("Figure 16: OpenDiffraction Machine Learning Tasks (T1 - T12)", fontsize=11, pad=15)
+    table.auto_set_font_size(False)
+    table.set_fontsize(8.5)
+
+    for (r, c), cell in table.get_celld().items():
+        cell.set_edgecolor("#CBD5E1")
+        cell.set_linewidth(0.8)
+        if r == 0:
+            cell.set_facecolor("#0F172A")
+            cell.set_text_props(weight="bold", color="white", ha="center", fontsize=9.5)
+            cell.set_height(0.06)
+        else:
+            bg = "#FFFFFF" if r % 2 != 0 else "#F8FAFC"
+            cell.set_facecolor(bg)
+            cell.set_height(0.065)
+            if c == 0:
+                cell.set_text_props(weight="bold", color="#1E293B", ha="center")
+            elif c == 5:
+                cell.set_text_props(weight="bold", color="#0369A1", ha="center", family="monospace", fontsize=8.0)
+            else:
+                cell.set_text_props(color="#334155")
+
+    fig.suptitle(
+        "Figure 16: OpenDiffraction Benchmark Tasks (T1 – T12) Specification",
+        fontsize=14,
+        fontweight="bold",
+        color="#0F172A",
+        y=0.96,
+    )
     _save(fig, output_dir / "figure_16_tasks_summary")
 
 
