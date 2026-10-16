@@ -1,0 +1,49 @@
+sample_id,shard_name,row_index,split,variation_family,object_family,density_type,photon_budget,coherence_length,readout_noise_std,beam_stop_geometry,missing_pixel_fraction
+OD_000000_V01,valid_000.h5,0,valid,V01,Real-World Specimens,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000005_V06,valid_000.h5,1,valid,V06,Real-World Specimens,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000008_V09,valid_000.h5,2,valid,V09,Real-World Specimens,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000019_V20,valid_000.h5,3,valid,V20,Illumination and Coherence,F5,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000038_V39,valid_000.h5,4,valid,V39,Acquisition and Hit Finding,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000001_V02,train_000.h5,0,train,V02,Real-World Specimens,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000002_V03,train_000.h5,1,train,V03,Real-World Specimens,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000003_V04,train_000.h5,2,train,V04,Real-World Specimens,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000004_V05,train_000.h5,3,train,V05,Real-World Specimens,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000006_V07,train_000.h5,4,train,V07,Real-World Specimens,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000007_V08,train_000.h5,5,train,V08,Real-World Specimens,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000009_V10,train_000.h5,6,train,V10,Real-World Specimens,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000010_V11,train_000.h5,7,train,V11,Real-World Specimens,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000011_V12,train_000.h5,8,train,V12,Real-World Specimens,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000012_V13,train_000.h5,9,train,V13,Illumination and Coherence,F1,3000000.0,inf,0.4247,16x16,0.0039
+OD_000013_V14,train_000.h5,10,train,V14,Illumination and Coherence,F2,3000000.0,150.0,0.4247,16x16,0.0039
+OD_000014_V15,train_000.h5,11,train,V15,Illumination and Coherence,F2,3000000.0,40.0,0.4247,16x16,0.0039
+OD_000015_V16,train_000.h5,12,train,V16,Illumination and Coherence,F3,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000016_V17,train_000.h5,13,train,V17,Illumination and Coherence,F3,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000020_V21,train_000.h5,14,train,V21,Detector Realism,F1,3000000.0,200.0,0.0,16x16,0.0
+OD_000021_V22,train_000.h5,15,train,V22,Detector Realism,F1,3000000.0,200.0,0.0,16x16,0.0039
+OD_000022_V23,train_000.h5,16,train,V23,Detector Realism,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000023_V24,train_000.h5,17,train,V24,Detector Realism,F1,3000000.0,200.0,2.5,16x16,0.0039
+OD_000024_V25,train_000.h5,18,train,V25,Detector Realism,F1,3000000.0,200.0,0.4247,16x16,0.003
+OD_000025_V26,train_000.h5,19,train,V26,Detector Realism,F1,3000000.0,200.0,0.4247,16x16,0.0103
+OD_000026_V27,train_000.h5,20,train,V27,Detector Realism,F1,3000000.0,200.0,0.4247,16x16,0.0259
+OD_000027_V28,train_000.h5,21,train,V28,Detector Realism,F1,3000000.0,200.0,0.4247,16x16,0.0125
+OD_000028_V29,train_000.h5,22,train,V29,Detector Realism,F1,10000000.0,200.0,0.4247,16x16,0.0039
+OD_000029_V30,train_000.h5,23,train,V30,Detector Realism,F1,3000000.0,200.0,0.4247,16x16,0.0268
+OD_000030_V31,train_000.h5,24,train,V31,Background and Scattering,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000032_V33,train_000.h5,25,train,V33,Background and Scattering,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000033_V34,train_000.h5,26,train,V34,Background and Scattering,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000034_V35,train_000.h5,27,train,V35,Background and Scattering,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000035_V36,train_000.h5,28,train,V36,Background and Scattering,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000036_V37,train_000.h5,29,train,V37,Acquisition and Hit Finding,F1,10000000.0,200.0,0.4247,16x16,0.0039
+OD_000037_V38,train_000.h5,30,train,V38,Acquisition and Hit Finding,F1,50000.0,200.0,0.4247,16x16,0.0039
+OD_000039_V40,train_000.h5,31,train,V40,Acquisition and Hit Finding,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000040_V41,train_000.h5,32,train,V41,Acquisition and Hit Finding,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000041_V42,train_000.h5,33,train,V42,Acquisition and Hit Finding,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000046_V47,train_000.h5,34,train,V47,Advanced Physics and OOD,F6,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000017_V18,test_000.h5,0,test,V18,Illumination and Coherence,F3,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000018_V19,test_000.h5,1,test,V19,Illumination and Coherence,F3,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000031_V32,test_000.h5,2,test,V32,Background and Scattering,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000042_V43,test_ood_000.h5,0,test_ood,V43,Advanced Physics and OOD,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000043_V44,test_ood_000.h5,1,test_ood,V44,Advanced Physics and OOD,F1,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000044_V45,test_ood_000.h5,2,test_ood,V45,Advanced Physics and OOD,F4,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000045_V46,test_ood_000.h5,3,test_ood,V46,Advanced Physics and OOD,F5,3000000.0,200.0,0.4247,16x16,0.0039
+OD_000047_V48,test_ood_000.h5,4,test_ood,V48,Advanced Physics and OOD,F1,100000.0,50.0,0.4247,16x16,0.0186

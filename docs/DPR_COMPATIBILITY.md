@@ -1,10 +1,15 @@
 # DPR Compatibility and Physical Specification
 
 **Reference Project**: Deep Phase Retrieval (DPR)  
-**Reference Paper**: Lee et al. (2025), *"Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers"*, Nature Communications / npj Computational Materials, DOI: [10.1038/s41524-025-01569-7](https://doi.org/10.1038/s41524-025-01569-7).  
+**Reference Paper**: Lee et al. (2025), *"Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers"*, npj Computational Materials 11, 68, DOI: [10.1038/s41524-025-01569-7](https://doi.org/10.1038/s41524-025-01569-7).  
 **Upstream Repository**: [https://github.com/sungyun98/DPR](https://github.com/sungyun98/DPR)  
 **Upstream Commit SHA**: `1952ee743a4913f1ae5fd3ca51a006c53709e8ae` (Date: Wed Sep 30 14:03:19 2026 +0900)  
-**Upstream License**: BSD 2-Clause License (Copyright (c) 2024, sungyun98)
+**Upstream License**: BSD 2-Clause License (Copyright (c) 2024, sungyun98)  
+**Dataset Creator & Maintainer**: Muhammad Kamal (GitHub: `@KindlyGentleman`, Kaggle: `@hamadmuhammadkamal`)
+
+> [!NOTE]
+> **Independence and Non-Endorsement Notice**:  
+> OpenDiffraction was independently developed by Muhammad Kamal as a synthetic diffraction benchmark inspired by the published literature. It is not an official project of Pohang University of Science and Technology (POSTECH), the FXDI research group, or the DPR authors, and has not been reviewed, approved, funded, or endorsed by them.
 
 ---
 

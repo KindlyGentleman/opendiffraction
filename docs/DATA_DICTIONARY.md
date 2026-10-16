@@ -11,9 +11,9 @@ OpenDiffraction stores paired benchmark samples in HDF5 format (`.h5` files, chu
 | Dataset Path | Array Shape | Dtype | Units | Physical Range | Description |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `/input` | `(N, 1, 512, 512)` | `float32` | Photons / ADU counts | $(-\infty, +\infty)$ (signed) | Measured degraded diffraction pattern with Poisson noise, readout noise, and beamstop masking. Ready for direct input into neural networks. |
-| `/target` | `(N, 1, 64, 64)` | `float32` | Dimensionless (normalized) | $[0.0, 1.0]$ | Ground-truth real-space object transmission density scaled according to DPR convention (`false_scale=True`, $O_{\text{dpr}} = O / \sqrt{\sum |O|^2}$). |
+| `/target` | `(N, 1, 64, 64)` | `float32` | Scaled flux amplitude | $[0.0, +\infty)$ | Ground-truth real-space object transmission density scaled according to DPR convention (`false_scale=True`, $T_{\text{dpr}} = O \cdot s$ where $s = \Phi / \sum I_{\text{coherent}}$). |
 | `/mask` | `(N, 1, 512, 512)` | `bool` | Boolean flag | `{False, True}` | Binary detector validity mask. `True` indicates a valid measured pixel; `False` indicates a missing pixel (beamstop, dead pixel, gap). |
-| `/object_amplitude` | `(N, 1, 64, 64)` | `float32` | Transmission magnitude | $[0.0, 1.0]$ | Physical unscaled transmission amplitude $|O(\mathbf{r})|$ before DPR $L_2$ normalization. |
+| `/object_amplitude` | `(N, 1, 64, 64)` | `float32` | Transmission magnitude | $[0.0, 1.0]$ | Physical unscaled transmission amplitude $O(\mathbf{r})$ before DPR flux scaling. |
 | `/object_phase` | `(N, 1, 64, 64)` | `float32` | Radians | $[-\pi, +\pi]$ | Ground-truth phase shift $\phi(\mathbf{r})$ induced by the object. For pure absorption phantoms, phase is identically zero. |
 | `/intensity_ideal` | `(N, 1, 512, 512)` | `float32` | Arbitrary intensity | $[0.0, +\infty)$ | Uncorrupted continuous Fraunhofer diffraction modulus squared $\|A(\mathbf{q})\|^2$ at infinite photon flux. |
 | `/intensity_expected`| `(N, 1, 512, 512)` | `float32` | Expected photon count | $[0.0, +\infty)$ | Partially coherent photon arrival rate $\lambda_i$ incorporating coherence blur and incident photon flux before stochastic noise sampling. |

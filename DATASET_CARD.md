@@ -4,21 +4,35 @@
 **OpenDiffraction: Physics-Based Synthetic Coherent Diffraction Patterns for Phase Retrieval and Image Reconstruction**
 
 - **Dataset Version**: 2.0.0
+- **Creator & Principal Maintainer**: [Muhammad Kamal](https://github.com/KindlyGentleman) (GitHub: `@KindlyGentleman`, Kaggle: `@hamadmuhammadkamal`)
 - **Primary Domain**: Coherent Diffraction Imaging (CDI), Computational Optics, Phase Retrieval, Machine Learning Inverse Problems
-- **License**: Creative Commons Attribution 4.0 International (CC BY 4.0)
-- **Primary Reference Paper**: Lee et al. (2025), *"Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers"*, Nature Communications / npj Computational Materials, DOI: [10.1038/s41524-025-01569-7](https://doi.org/10.1038/s41524-025-01569-7).
+- **Code License**: BSD 2-Clause (Copyright (c) 2026 Muhammad Kamal)
+- **Data & Figures License**: Creative Commons Attribution 4.0 International (CC BY 4.0)
+- **Primary Reference Paper**: Lee et al. (2025), *"Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers"*, npj Computational Materials 11, 68, DOI: [10.1038/s41524-025-01569-7](https://doi.org/10.1038/s41524-025-01569-7).
 - **Reference Repository**: [https://github.com/sungyun98/DPR](https://github.com/sungyun98/DPR) (BSD 2-Clause License)
 - **CXI Standard**: [https://cxidb.org/cxi.html](https://cxidb.org/cxi.html)
 
 ---
 
-## 1. Executive Disclosure: Real vs. Synthetic Data
+## 1. Executive Disclosure: Quick-Release Benchmark Scope & Synthetic Data
+
+> [!WARNING]
+> **48-SAMPLE QUICK-RELEASE BENCHMARK SCOPE:**  
+> The published release on Kaggle contains **exactly 48 curated samples** (1 per physical profile `V01` through `V48`: 35 train, 5 validation, 3 test, 5 test_ood).  
+> **48 samples are strictly insufficient for training supervised deep neural networks from scratch.**  
+> The 48-sample release serves as:
+> 1. An evaluation benchmark and testbed for pre-trained phase retrieval networks.
+> 2. A verification suite for classical iterators (ER, HIO, Shrinkwrap, RAAR).
+> 3. An out-of-distribution (OOD) stress test across partial coherence, beam stops, and phase objects.
+> 
+> To generate large-scale training volumes ($10^4$ to $10^5$ samples), execute:  
+> `python -m opendiffraction.cli generate --preset full --samples 10000 --output ./my_full_dataset`
 
 > [!IMPORTANT]
-> **ALL DATA IN THIS DATASET ARE NUMERICALLY SIMULATED USING FIRST-PRINCIPLES FOURIER OPTICS.**
-> None of the patterns represent experimentally measured beamtime exposures.
-> High performance on synthetic diffraction benchmarks **does not prove** automatic generalization to real experimental X-ray Free-Electron Laser (XFEL) or synchrotron beamline data.
-> This dataset is inspired by the Deep Phase Retrieval (DPR) forward model and CXIDB experimental standards, but is an independent, 100% procedural benchmark and is **not an official DPR or SLAC/SACLA release**.
+> **ALL DATA IN THIS DATASET ARE NUMERICALLY SIMULATED USING FIRST-PRINCIPLES FOURIER OPTICS.**  
+> None of the patterns represent experimentally measured beamtime exposures.  
+> High performance on synthetic diffraction benchmarks **does not prove** automatic generalization to real experimental X-ray Free-Electron Laser (XFEL) or synchrotron beamline data.  
+> OpenDiffraction was independently developed by Muhammad Kamal. It is **not an official release of POSTECH, the FXDI research group, or the DPR authors**, and has not been reviewed, approved, funded, or endorsed by them.
 
 ---
 
@@ -147,9 +161,14 @@ OpenDiffraction 2.0 organizes 48 labeled experimental profiles across 6 physical
 
 ## 5. Dataset Architecture & Split Integrity
 
-- **Splits**: 70% Training, 15% Validation, 15% Testing.
+The released package contains 48 curated samples (1 sample per variation profile `V01` through `V48`):
+
+- **Train Split (`train_000.h5`)**: 35 samples (72.9%) spanning diverse specimens, nominal illumination, and standard detector noise.
+- **Validation Split (`valid_000.h5`)**: 5 samples (10.4%) for checkpoint validation (`V01`, `V06`, `V09`, `V20`, `V39`).
+- **In-Distribution Test Split (`test_000.h5`)**: 3 samples (6.3%) for in-distribution testing (`V18`, `V19`, `V32`).
+- **Out-of-Distribution Test Split (`test_ood_000.h5`)**: 5 samples (10.4%) quarantined exclusively for out-of-distribution stress evaluation (`V43`, `V44`, `V45`, `V46`, `V48`).
 - **Group Disjointness**: Splitting is executed strictly on immutable base object identifiers (`group_id`). All paired clean-noisy observations and degraded variants of a given object reside strictly in the same split. **Zero object-level leakage exists across train/val/test partitions.**
-- **OOD Isolation**: Profile V12 is partitioned exclusively into the test split (`test_ood`), ensuring training algorithms never observe extreme out-of-distribution stress conditions during model optimization.
+- **OOD Isolation**: Profiles `V43` (weak phase), `V44` (strong phase vortex), `V45` (Fresnel near-field), `V46` (polychromatic radial stretch), and `V48` (adversarial compound defects) are strictly isolated in `test_ood`, guaranteeing that training algorithms never encounter extreme physics violations during optimization.
 
 ---
 

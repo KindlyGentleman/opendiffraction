@@ -30,19 +30,20 @@ OpenDiffraction runs natively on commodity hardware without requiring GPU accele
 - **Memory (RAM)**: Minimum 4 GB; 8 GB+ recommended for large-batch multiprocessing.
 - **Disk Storage**:
   - Code and benchmark manifests: $< 50$ MB.
-  - Quick benchmark package (100 samples): $\approx 120$ MB.
-  - Full Kaggle release package (1,000 samples): $\approx 1.2$ GB.
+  - Quick benchmark package (48 samples): $\approx 48$ MB.
+  - Scaled production packages (10,000 samples): $\approx 10$ GB.
 - **Architecture**: x86_64 or ARM64 (Apple Silicon).
 
 ### Core Dependencies (`pyproject.toml`)
 ```toml
 dependencies = [
-    "numpy>=1.24.0",
-    "scipy>=1.10.0",
-    "h5py>=3.8.0",
-    "pandas>=2.0.0",
-    "matplotlib>=3.7.0",
-    "scikit-image>=0.20.0",
+    "numpy>=1.21.0",
+    "scipy>=1.8.0",
+    "h5py>=3.7.0",
+    "pandas>=1.4.0",
+    "matplotlib>=3.5.0",
+    "tqdm>=4.64.0",
+    "pyyaml>=6.0",
 ]
 ```
 
@@ -74,29 +75,24 @@ pytest tests/ -v
 Expected output: `75 passed in ~30s (100% success)`.
 
 ### Step 3: Run Baseline Benchmarks
-Run the classical iterative phase retrieval (HIO/ER), denoising, and hit-finding baselines:
+Run the classical iterative phase retrieval (HIO/ER) and benchmark evaluation:
 ```bash
-python benchmarks/evaluate.py
+python scripts/generate_phase8_reports.py
 ```
-Expected output:
-- `B1_phase_retrieval`: SSIM $\approx 0.741$, MSE $\approx 0.0308$, R-factor $\approx 0.0254$.
-- `B2_denoising`: PSNR $\approx 65.8$ dB.
-- `B3_inpainting`: PSNR $\approx 31.2$ dB.
-- `B4_hit_detection`: Accuracy $100\%$, ROC-AUC $1.000$.
 
 ### Step 4: Generate Benchmark Release Dataset
-Generate a reproducible dataset shard using deterministic seed 42:
+Generate the reproducible 48-sample Quick-Release benchmark dataset using deterministic seed 42:
 ```bash
-python scripts/generate_release.py --samples 100 --output-dir ./output_quick --seed 42
+python -m opendiffraction.cli generate --preset quick --output ./reproduced_dataset --seed 42
 ```
 
 ### Step 5: Validate Data Integrity and Checksums
-Audit HDF5 structure, array dtypes, CXI compliance, and SHA-256 checksums:
+Audit HDF5 structure, array dtypes, CXI compliance, and verification rules:
 ```bash
-python scripts/validate_release.py output_quick
-python scripts/verify_download.py output_quick
+python -m opendiffraction.cli validate --dataset ./reproduced_dataset --reports-dir ./reproduced_reports
+python scripts/audit_release.py --strict
 ```
-Expected output: `ALL 12 VALIDATION CHECKS PASSED: 100% SUCCESS` and `ALL 12 FILES VERIFIED SUCCESSFULLY: 100% PASS`.
+Expected output: `ALL 20 RELEASE AUDIT CHECKS PASSED: 100% SUCCESS`.
 
 ---
 

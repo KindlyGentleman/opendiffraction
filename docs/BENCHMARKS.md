@@ -4,6 +4,14 @@ OpenDiffraction 2.0 establishes 12 standardized, leakage-resistant benchmark tas
 
 ---
 
+> [!WARNING]
+> **Quick-Release Benchmark Qualification**:  
+> The published Kaggle release contains **48 curated samples** (1 per profile V01–V48) serving as an **evaluation benchmark, testing harness, and out-of-distribution stress test**.  
+> **48 samples are strictly insufficient for training supervised deep neural networks from scratch.**  
+> For training models from scratch, generate full training volumes using `python -m opendiffraction.cli generate --preset full --samples 10000`.
+
+---
+
 ## Benchmark Overview Table
 
 | Task ID | Task Name | Input Tensor | Target Output | Primary Evaluation Metrics | Baseline Benchmark |
@@ -15,7 +23,7 @@ OpenDiffraction 2.0 establishes 12 standardized, leakage-resistant benchmark tas
 | **T5** | Defect Segmentation | `/input` (512x512) | `/mask` (512x512 bool) | Mean IoU, Dice Coefficient | Otsu Thresholding / DeepLabV3+ |
 | **T6** | Morphology Classification| `/input` (512x512) | Morphology class ID (1-12) | Macro F1, Top-1 and Top-3 Accuracy | ResNet-18 / Swin Transformer |
 | **T7** | Parameter Estimation | `/input` (512x512) | `total_photons`, $l_{\text{coh}}$ | Mean Absolute Percentage Error (MAPE), $R^2$ | Feature Ridge Regression / MLP |
-| **T8** | Anomaly Detection | `/input` (512x512) | Anomaly score on OOD (V12) | AUROC, False Alarm Rate @ 95% TPR | Deep SVDD / Normalized Reconstruction Error |
+| **T8** | Anomaly Detection | `/input` (512x512) | Anomaly score on OOD (V43-V48) | AUROC, False Alarm Rate @ 95% TPR | Deep SVDD / Normalized Reconstruction Error |
 | **T9** | Domain Generalization | Scenario S1 inputs | Reconstructions on S2-S6 | Domain Generalization Gap ($\Delta\text{SSIM}$) | Empirical Risk Minimization (ERM) vs DANN |
 | **T10**| Self-Supervised Learning| `/input` (unlabeled) | Self-supervised embeddings | Linear probing accuracy on T6 & T7 | SimCLR / Masked Autoencoder (MAE) |
 | **T11**| Uncertainty Quantification| `/input` (512x512) | Object mean & variance maps | Expected Calibration Error (ECE), NLL | Monte Carlo Dropout / Deep Ensembles |
