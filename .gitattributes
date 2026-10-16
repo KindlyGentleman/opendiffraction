@@ -1,0 +1,6 @@
+# OpenDiffraction: Ensure consistent LF line endings across platforms for bit-exact checksum reproducibility
+* text=auto eol=lf
+*.h5 binary
+*.cxi binary
+*.png binary
+*.zip binary
