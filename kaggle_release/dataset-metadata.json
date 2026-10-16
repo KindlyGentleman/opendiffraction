@@ -4,16 +4,13 @@
   "id": "hamadmuhammadkamal/opendiffraction-synthetic-cdi",
   "licenses": [
     {
-      "name": "CC-BY-4.0"
+      "name": "Attribution 4.0 International (CC BY 4.0)"
     }
   ],
   "keywords": [
     "physics",
-    "optics",
     "computer vision",
     "deep learning",
-    "image processing",
-    "inverse problems",
     "benchmark"
   ],
   "expectedUpdateFrequency": "annually",
