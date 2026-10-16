@@ -1,0 +1,25 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.coverage
+htmlcov/
+
+# Build and egg-info
+build/
+dist/
+*.egg-info/
+
+# Local virtual environment
+.venv/
+venv/
+ENV/
+
+# Large local datasets (keep release manifests and scripts)
+output/data/*.h5
+kaggle_release/data/*.h5
+*.tmp
+
+# Jupyter Checkpoints
+.ipynb_checkpoints/

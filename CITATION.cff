@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this dataset or software in your research, please cite it as below."
+title: "OpenDiffraction: Physics-Based Synthetic Coherent Diffraction Patterns for Phase Retrieval and Image Reconstruction"
+version: 0.1.0
+date-released: 2026-10-16
+url: "https://github.com/muham/opendiffraction"
+authors:
+  - family-names: "OpenDiffraction Contributors"
+    given-names: "Computational Optics Team"
+keywords:
+  - "coherent diffraction imaging"
+  - "phase retrieval"
+  - "X-ray free-electron lasers"
+  - "computational optics"
+  - "inverse problems"
+  - "synthetic benchmark"
+license: "CC-BY-4.0"
+references:
+  - type: article
+    title: "Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers"
+    authors:
+      - family-names: "Lee"
+        given-names: "Sungyun"
+      - family-names: "Kim"
+        given-names: "Dongil"
+      - family-names: "Nam"
+        given-names: "Daewoong"
+      - family-names: "Kim"
+        given-names: "Minhyuk"
+      - family-names: "Kim"
+        given-names: "Chan"
+      - family-names: "Song"
+        given-names: "Changyong"
+    journal: "npj Computational Materials"
+    doi: "10.1038/s41524-025-01569-7"
+    year: 2025

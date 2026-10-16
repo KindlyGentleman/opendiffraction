@@ -1,0 +1,1 @@
+"""OpenDiffraction test suite."""
