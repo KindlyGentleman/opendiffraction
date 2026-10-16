@@ -5,6 +5,28 @@
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Physics: Fraunhofer CDI](https://img.shields.io/badge/physics-Fraunhofer_CDI-green.svg)](https://doi.org/10.1038/s41524-025-01569-7)
 
+**Creator & Principal Maintainer:** [Muhammad Kamal](https://github.com/KindlyGentleman) (GitHub: `@KindlyGentleman`, Kaggle: `@hamadmuhammadkamal`)  
+**GitHub Repository:** [https://github.com/KindlyGentleman/opendiffraction](https://github.com/KindlyGentleman/opendiffraction)  
+**Kaggle Dataset:** [https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi](https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi)
+
+---
+
+> [!IMPORTANT]
+> **Dataset Scope Notice: 48-Sample Quick-Release Benchmark**  
+> The published release on Kaggle is a **48-sample Quick-Release Benchmark** containing exactly 1 representative sample per physical profile (`V01` through `V48`: 35 train, 5 validation, 3 test, 5 test_ood).  
+> **48 samples are strictly insufficient for training supervised deep neural networks from scratch.**  
+> This benchmark is designed for:
+> 1. Rapid algorithmic benchmarking of classical iterators (ER, HIO, Shrinkwrap, RAAR).
+> 2. Zero-shot and fine-tuning evaluation of pre-trained deep phase retrieval networks.
+> 3. Out-of-distribution (OOD) stress testing across partial coherence, beam stops, and complex phase objects.
+> 
+> To generate large-scale training volumes ($10^4$ to $10^5$ samples) for training neural networks from scratch, use the generator from GitHub:
+> ```bash
+> python -m opendiffraction.cli generate --preset full --samples 10000 --output ./my_full_dataset
+> ```
+
+---
+
 **OpenDiffraction 2.0** is an open-source, reproducible, physics-based synthetic diffraction imaging generator and machine learning benchmark suite designed for public publication on Kaggle. It simulates Fraunhofer coherent X-ray diffraction, Gaussian Schell-model partial spatial coherence, mixed Poisson shot noise, Gaussian detector electronics noise, central beam stops, and irregular detector gaps.
 
 OpenDiffraction produces datasets that are directly compatible with the Deep Phase Retrieval ([DPR](https://github.com/sungyun98/DPR)) neural network while offering an extended scientific format containing unscaled physical ground-truth objects, uncorrupted ideal intensities, expected photon rates, and complete experimental manifests.
@@ -79,6 +101,13 @@ OpenDiffraction produces datasets that are directly compatible with the Deep Pha
   <em>Figure 4: Baseline iterative phase retrieval (HIO + ER) achieving real-space object reconstruction and phase-ambiguity alignment from masked diffraction intensities alone.</em>
 </p>
 
+<p align="center">
+  <img src="examples/figure_16_tasks_summary.png" width="90%" alt="12 Machine Learning Benchmark Tasks">
+</p>
+<p align="center">
+  <em>Figure 5: 12 standardized machine learning benchmark tasks (T1 to T12) establishing evaluation protocols across inverse imaging, denoising, hit-finding, and domain adaptation.</em>
+</p>
+
 5. **Official CXI Format Support**:
    - NeXus-compliant CXI (`.cxi`) export conforming to CXIDB standards (`cxidb.org/cxi.html`).
 
@@ -88,79 +117,86 @@ OpenDiffraction produces datasets that are directly compatible with the Deep Pha
 
 ### Installation
 ```bash
-git clone https://github.com/muham/opendiffraction.git
+git clone https://github.com/KindlyGentleman/opendiffraction.git
 cd opendiffraction
 pip install -e .
 ```
 
-### Command-Line Interface
+### Loading the Kaggle Shards in Python
+```python
+import h5py
+import numpy as np
 
-Generate quick smoke-test dataset (48 samples, 1 per profile):
-```bash
-python -m opendiffraction generate --preset quick --output ./output --seed 42
+# Load in-distribution test shard
+with h5py.File("data/test_000.h5", "r") as f:
+    inputs = f["input"][:]           # (3, 1, 512, 512) float32
+    targets = f["target"][:]         # (3, 1, 64, 64) float32 (DPR false_scale convention)
+    masks = f["mask"][:]             # (3, 1, 512, 512) bool
+    clean_amp = f["object_amplitude"][:] # (3, 1, 64, 64) float32 (physical ground truth [0, 1])
+
+print(f"Loaded {len(inputs)} test samples.")
 ```
 
-Generate full starter benchmark (2,400 samples):
-```bash
-python -m opendiffraction generate --preset starter --output ./output --seed 42
-```
+### Direct Upstream DPR Loading
+```python
+from deeppr import CustomDataset
 
-Generate using YAML config preset with CXI and task manifest exports:
-```bash
-python -m opendiffraction generate --config configs/xfel.yaml --export-cxi --export-tasks
-```
-
-Validate physics, statistics, and HDF5 integrity:
-```bash
-python -m opendiffraction validate --dataset ./output --reports-dir ./reports
-```
-
-Generate publication figures (16 IEEE figures and contact sheets):
-```bash
-python -m opendiffraction visualize --dataset ./output --output ./output/figures --suite 16
-```
-
-Generate animated parameter sweep GIFs:
-```bash
-python -m opendiffraction animate --output ./output/figures/sweeps --type both
-```
-
-Package dataset for Kaggle release:
-```bash
-python -m opendiffraction package --dataset ./output --output ./kaggle_release --username YOUR_KAGGLE_USERNAME
+# Turnkey loading with upstream DPR CustomDataset loader
+ds = CustomDataset("data/train_000.h5")
+inp, tgt, msk = ds[0]
+print("DPR shapes:", inp.shape, tgt.shape, msk.shape)
 ```
 
 ---
 
-## Configuration Presets
+## Citation
 
-Pre-packaged YAML configurations are located in `configs/`:
-- `quick.yaml`: 48 samples (1 per profile V01 - V48) for fast end-to-end testing.
-- `starter.yaml`: 2,400 samples across all 48 profiles (50 per profile).
-- `full.yaml`: 9,600 samples for production machine learning training.
-- `xfel.yaml`: S1 XFEL single-particle acquisition scenario.
-- `synchrotron.yaml`: S2 synchrotron beamline scenario.
-- `optical_lab.yaml`: S5 optical tabletop CDI scenario.
+If you use OpenDiffraction in your work, please cite the dataset and foundational scientific publication:
+
+### Citing the Dataset
+```bibtex
+@misc{kamal2026opendiffraction,
+  author       = {Kamal, Muhammad},
+  title        = {{OpenDiffraction: Physics-Based Synthetic Diffraction Imaging Dataset}},
+  year         = {2026},
+  publisher    = {GitHub \& Kaggle},
+  howpublished = {\url{https://github.com/KindlyGentleman/opendiffraction}},
+  doi          = {10.5281/zenodo.19018440}
+}
+```
+
+### Foundational DPR Scientific Reference
+```bibtex
+@article{lee2025deep,
+  author    = {Lee, Sung Yun and Cho, Do Hyung and Jung, Chulho and Sung, Daeho and Nam, Daewoong and Kim, Sangsoo and Song, Changyong},
+  title     = {Deep-learning real-time phase retrieval of imperfect diffraction patterns from {X}-ray free-electron lasers},
+  journal   = {npj Computational Materials},
+  volume    = {11},
+  number    = {1},
+  pages     = {68},
+  year      = {2025},
+  publisher = {Nature Publishing Group},
+  doi       = {10.1038/s41524-025-01569-7}
+}
+```
 
 ---
 
-## Notebooks
+## Non-Endorsement & Independence Disclosure
 
-- [`notebooks/01_explore_opendiffraction.ipynb`](notebooks/01_explore_opendiffraction.ipynb): Dataset inspection, shard loading, and visualization.
-- [`notebooks/02_phase_retrieval_baseline.ipynb`](notebooks/02_phase_retrieval_baseline.ipynb): Iterative phase retrieval baseline using HIO and Error Reduction.
+OpenDiffraction was independently created and curated by Muhammad Kamal as an open-source synthetic dataset and scientific benchmark. It is not an official project of Pohang University of Science and Technology (POSTECH), the FXDI research group, or the authors of DPR. None of these entities have reviewed, approved, funded, or endorsed OpenDiffraction.
 
 ---
 
 ## References
 
-1. Lee et al. (2025), *"Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers"*, Nature Communications / npj Computational Materials, DOI: [10.1038/s41524-025-01569-7](https://doi.org/10.1038/s41524-025-01569-7).
-2. Upstream DPR Repository: [https://github.com/sungyun98/DPR](https://github.com/sungyun98/DPR) (BSD 2-Clause License).
-3. CXIDB Coherent X-ray Imaging Data Bank: [https://cxidb.org/](https://cxidb.org/).
-4. Detailed compatibility and upstream history: [`docs/DPR_COMPATIBILITY.md`](docs/DPR_COMPATIBILITY.md).
+1. **Foundational Paper**: Lee, S. Y., Cho, D. H., Jung, C., Sung, D., Nam, D., Kim, S., & Song, C. (2025). *Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers*. npj Computational Materials 11, 68. DOI: [10.1038/s41524-025-01569-7](https://doi.org/10.1038/s41524-025-01569-7).
+2. **Upstream DPR Repository**: [https://github.com/sungyun98/DPR](https://github.com/sungyun98/DPR) (BSD 2-Clause License).
+3. **Coherent X-ray Imaging Data Bank (CXIDB)**: Maia, F. R. (2012). *The Coherent X-ray Imaging Data Bank*. Nature Methods 9, 854–855. [https://cxidb.org/](https://cxidb.org/).
 
 ---
 
 ## License
 
-- Scientific Data: [Creative Commons Attribution 4.0 International (CC BY 4.0)](LICENSE)
-- Source Code: [BSD 2-Clause License](LICENSE)
+- **Dataset, Figures, & Metadata**: [Creative Commons Attribution 4.0 International (CC BY 4.0)](https://creativecommons.org/licenses/by/4.0/)
+- **Source Code & Scripts**: [BSD 2-Clause License](https://opensource.org/licenses/BSD-2-Clause) (Copyright &copy; 2026 Muhammad Kamal)

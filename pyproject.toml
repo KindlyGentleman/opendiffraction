@@ -9,7 +9,8 @@ description = "Physics-based synthetic coherent diffraction dataset generator fo
 readme = "README.md"
 license = { text = "BSD-2-Clause" }
 requires-python = ">=3.9"
-authors = [{ name = "OpenDiffraction Contributors" }]
+authors = [{ name = "Muhammad Kamal" }]
+maintainers = [{ name = "Muhammad Kamal" }]
 dependencies = [
     "numpy>=1.21.0",
     "scipy>=1.8.0",
@@ -19,6 +20,11 @@ dependencies = [
     "tqdm>=4.64.0",
     "pyyaml>=6.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/KindlyGentleman/opendiffraction"
+Repository = "https://github.com/KindlyGentleman/opendiffraction"
+"Kaggle Dataset" = "https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi"
 
 [project.optional-dependencies]
 dev = [

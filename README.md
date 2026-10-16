@@ -6,6 +6,28 @@
 [![Physics: Fraunhofer CDI](https://img.shields.io/badge/physics-Fraunhofer_CDI-green.svg)](https://doi.org/10.1038/s41524-025-01569-7)
 [![Kaggle Dataset](https://img.shields.io/badge/Kaggle-opendiffraction--synthetic--cdi-20BEFF.svg)](https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi)
 
+**Creator & Principal Maintainer:** [Muhammad Kamal](https://github.com/KindlyGentleman) (GitHub: `@KindlyGentleman`, Kaggle: `@hamadmuhammadkamal`)  
+**Repository:** [https://github.com/KindlyGentleman/opendiffraction](https://github.com/KindlyGentleman/opendiffraction)  
+**Kaggle Dataset:** [https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi](https://www.kaggle.com/datasets/hamadmuhammadkamal/opendiffraction-synthetic-cdi)
+
+---
+
+> [!IMPORTANT]
+> **Dataset Scope Notice: 48-Sample Quick-Release Benchmark**  
+> The published release on Kaggle is a **48-sample Quick-Release Benchmark** containing exactly 1 representative sample per physical profile (`V01` through `V48`: 35 train, 5 validation, 3 test, 5 test_ood).  
+> **48 samples are strictly insufficient for training supervised deep neural networks from scratch.**  
+> This benchmark is designed for:
+> 1. Rapid algorithmic benchmarking of classical iterators (ER, HIO, Shrinkwrap, RAAR).
+> 2. Zero-shot and fine-tuning evaluation of pre-trained deep phase retrieval networks.
+> 3. Out-of-distribution (OOD) stress testing across partial coherence, beam stops, and complex phase objects.
+> 
+> To generate large-scale training volumes ($10^4$ to $10^5$ samples) for training neural networks from scratch, use the included generator:
+> ```bash
+> python -m opendiffraction.cli generate --preset full --samples 10000 --output ./my_full_dataset
+> ```
+
+---
+
 **OpenDiffraction 2.0** is an open-source, reproducible, physics-based synthetic diffraction imaging generator and machine learning benchmark suite designed for public publication on Kaggle. It simulates Fraunhofer coherent X-ray diffraction, Gaussian Schell-model partial spatial coherence, mixed Poisson shot noise, Gaussian detector electronics noise, central beam stops, and irregular detector gaps.
 
 OpenDiffraction produces datasets that are directly compatible with the Deep Phase Retrieval ([DPR](https://github.com/sungyun98/DPR)) neural network while offering an extended scientific format containing unscaled physical ground-truth objects, uncorrupted ideal intensities, expected photon rates, and complete experimental manifests.
@@ -159,16 +181,59 @@ Pre-packaged YAML configurations are located in `configs/`:
 
 ---
 
+## Citation
+
+If you use OpenDiffraction in your research, machine learning benchmarks, or educational curricula, please cite the dataset and the foundational DPR scientific paper:
+
+### Citing the Dataset
+```bibtex
+@misc{kamal2026opendiffraction,
+  author       = {Kamal, Muhammad},
+  title        = {{OpenDiffraction: Physics-Based Synthetic Diffraction Imaging Dataset}},
+  year         = {2026},
+  publisher    = {GitHub \& Kaggle},
+  howpublished = {\url{https://github.com/KindlyGentleman/opendiffraction}},
+  doi          = {10.5281/zenodo.19018440}
+}
+```
+
+### Foundational Inspiration & Scientific Reference
+OpenDiffraction was inspired by and benchmarked against Deep Phase Retrieval (DPR) developed by Sung Yun Lee et al.:
+```bibtex
+@article{lee2025deep,
+  author    = {Lee, Sung Yun and Cho, Do Hyung and Jung, Chulho and Sung, Daeho and Nam, Daewoong and Kim, Sangsoo and Song, Changyong},
+  title     = {Deep-learning real-time phase retrieval of imperfect diffraction patterns from {X}-ray free-electron lasers},
+  journal   = {npj Computational Materials},
+  volume    = {11},
+  number    = {1},
+  pages     = {68},
+  year      = {2025},
+  publisher = {Nature Publishing Group},
+  doi       = {10.1038/s41524-025-01569-7}
+}
+```
+
+---
+
+## Non-Endorsement & Independence Disclosure
+
+OpenDiffraction was independently created and maintained by Muhammad Kamal as an open-source synthetic dataset and scientific benchmark. It is not an official project of Pohang University of Science and Technology (POSTECH), the FXDI research group, or the authors of DPR. None of these entities have reviewed, approved, funded, or endorsed OpenDiffraction.
+
+---
+
 ## References
 
-1. Lee et al. (2025), *"Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers"*, Nature Communications / npj Computational Materials, DOI: [10.1038/s41524-025-01569-7](https://doi.org/10.1038/s41524-025-01569-7).
-2. Upstream DPR Repository: [https://github.com/sungyun98/DPR](https://github.com/sungyun98/DPR) (BSD 2-Clause License).
-3. CXIDB Coherent X-ray Imaging Data Bank: [https://cxidb.org/](https://cxidb.org/).
-4. Detailed compatibility and upstream history: [`docs/DPR_COMPATIBILITY.md`](docs/DPR_COMPATIBILITY.md).
+1. **Foundational Paper**: Lee, S. Y., Cho, D. H., Jung, C., Sung, D., Nam, D., Kim, S., & Song, C. (2025). *Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers*. npj Computational Materials 11, 68. DOI: [10.1038/s41524-025-01569-7](https://doi.org/10.1038/s41524-025-01569-7).
+2. **Upstream DPR Repository**: [https://github.com/sungyun98/DPR](https://github.com/sungyun98/DPR) (BSD 2-Clause License).
+3. **Coherent X-ray Imaging Data Bank (CXIDB)**: Maia, F. R. (2012). *The Coherent X-ray Imaging Data Bank*. Nature Methods 9, 854–855. [https://cxidb.org/](https://cxidb.org/).
+4. **Complete Literature Bibliography**: [`REFERENCES.bib`](REFERENCES.bib) and [`CITATION.md`](CITATION.md).
+5. **Upstream DPR Compatibility Guide**: [`docs/DPR_COMPATIBILITY.md`](docs/DPR_COMPATIBILITY.md).
 
 ---
 
 ## License
 
-- Scientific Data: [Creative Commons Attribution 4.0 International (CC BY 4.0)](LICENSE)
-- Source Code: [BSD 2-Clause License](LICENSE)
+OpenDiffraction is released under a clear dual-license model:
+- **Software & Code**: [BSD 2-Clause License](LICENSE) (Copyright &copy; 2026 Muhammad Kamal, incorporating BSD-2-Clause notices from upstream DPR).
+- **Data, Figures, & Documentation**: [Creative Commons Attribution 4.0 International (CC BY 4.0)](LICENSE-DATA.md).
+- Full details and rights breakdown: [`LICENSES.md`](LICENSES.md) and [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

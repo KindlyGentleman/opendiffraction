@@ -51,3 +51,6 @@ Thumbs.db
 .idea/
 *.swp
 *~
+
+# Audit downloads and temporary audit scratch
+audit_download/

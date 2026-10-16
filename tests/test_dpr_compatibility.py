@@ -10,10 +10,24 @@ import torch
 from opendiffraction.generator.pipeline import generate_dataset
 from opendiffraction.physics.forward import SimulationConfig, simulate_diffraction
 
-# Add DPR_upstream to path if present
-DPR_PATH = r"d:\03_Proyek\DPR_upstream"
-if os.path.exists(DPR_PATH) and DPR_PATH not in sys.path:
-    sys.path.insert(0, DPR_PATH)
+# Dynamic discovery of DPR upstream directory
+def _discover_dpr_path() -> str | None:
+    candidates = [
+        os.environ.get("DPR_PATH"),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "DPR_upstream")),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "DPR")),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "DPR_upstream")),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "DPR")),
+        r"d:\03_Proyek\DPR_upstream",
+    ]
+    for cand in candidates:
+        if cand and os.path.isdir(cand) and os.path.isfile(os.path.join(cand, "deeppr", "__init__.py")):
+            return cand
+    return None
+
+_dpr_dir = _discover_dpr_path()
+if _dpr_dir and _dpr_dir not in sys.path:
+    sys.path.insert(0, _dpr_dir)
 
 
 def test_17_dpr_custom_dataset_loading():
@@ -86,3 +100,103 @@ def test_18_numerical_agreement_with_dpr_forward_model():
 
     # Compare unnormalized coherent intensity: should agree within floating point precision (float32 tolerance)
     np.testing.assert_allclose(inten_opendiff, inten_dpr_np, rtol=1e-4, atol=1e-2)
+
+
+def test_19_gsm_coherence_decay_and_energy_conservation():
+    """Test 19: Check GSM partial coherence kernel decay, zero lag, and energy conservation."""
+    from opendiffraction.physics.coherence import apply_partial_coherence, create_coherence_kernel
+
+    shape = (512, 512)
+    l_coh = 60.0
+
+    # 1. Kernel properties
+    kernel = create_coherence_kernel(l_coh=l_coh, shape=shape, legacy=False)
+    # DC / zero lag is at index (0, 0) for ifft2 convention
+    assert np.isclose(kernel[0, 0], 1.0, atol=1e-6)
+
+    # Check value at lag = l_coh along y-axis: r = l_coh -> exp(-0.5) ~ 0.60653
+    # In ifft2 frequency indexing, y = 60 corresponds to row index 60
+    assert np.isclose(kernel[int(l_coh), 0], np.exp(-0.5), rtol=1e-3)
+
+    # Infinite coherence length returns identically 1.0 everywhere
+    kernel_inf = create_coherence_kernel(l_coh=float("inf"), shape=shape)
+    assert np.all(kernel_inf == 1.0)
+
+    # 2. Energy conservation under partial coherence
+    rng = np.random.default_rng(123)
+    # Simulated smooth diffraction intensity
+    kx = np.linspace(-10, 10, 512)
+    ky = np.linspace(-10, 10, 512)
+    kyy, kxx = np.meshgrid(ky, kx, indexing="ij")
+    intensity_ideal = np.exp(-(kyy**2 + kxx**2) / 20.0).astype(np.float64)
+
+    intensity_part = apply_partial_coherence(intensity_ideal, l_coh=l_coh)
+    # Total photon energy must be conserved
+    sum_ideal = np.sum(intensity_ideal)
+    sum_part = np.sum(intensity_part)
+    assert np.isclose(sum_ideal, sum_part, rtol=1e-5)
+
+    # Fully coherent should return identical intensity
+    intensity_coh = apply_partial_coherence(intensity_ideal, l_coh=float("inf"))
+    np.testing.assert_allclose(intensity_coh, intensity_ideal, rtol=1e-6)
+
+
+def test_20_dpr_target_scaling_and_physical_scaling():
+    """Test 20: Check DPR false_scale=True (target=obj*scale) vs physical scaling (target=obj*sqrt(scale))."""
+    rng = np.random.default_rng(777)
+    obj = rng.uniform(0.1, 0.8, size=(64, 64)).astype(np.float32)
+
+    cfg = SimulationConfig(
+        object_size=(64, 64),
+        detector_size=(512, 512),
+        photon_budget=5e6,
+        coherence_length=150.0,
+        false_scale=True,
+    )
+    result = simulate_diffraction(obj, config=cfg, rng=rng)
+
+    scale = result.scale_factor
+    # DPR false_scale convention: target = obj * scale
+    expected_dpr = (obj * scale).astype(np.float32)
+    np.testing.assert_allclose(result.target_dpr, expected_dpr, rtol=1e-5)
+
+    # Physical convention: target = obj * sqrt(scale)
+    expected_phys = (obj * np.sqrt(scale)).astype(np.float32)
+    np.testing.assert_allclose(result.target_physical, expected_phys, rtol=1e-5)
+
+    # Ratio between DPR target and physical target must be sqrt(scale)
+    ratio = result.target_dpr / (result.target_physical + 1e-12)
+    np.testing.assert_allclose(ratio, np.sqrt(scale), rtol=1e-4)
+
+
+def test_21_detector_masks_and_masked_observations():
+    """Test 21: Check beam stop, module gaps, and observed masked integrity."""
+    from opendiffraction.physics.masks import composite_detector_mask
+
+    rng = np.random.default_rng(999)
+    mask = composite_detector_mask(
+        shape=(512, 512),
+        include_beam_stop=True,
+        beam_stop_hw=16,
+        beam_stop_hh=16,
+        include_module_gaps=True,
+        gap_width=4,
+        rng=rng,
+    )
+
+    # Beam stop at center (256, 256): indices [240:272, 240:272] must be False (0)
+    center_y, center_x = 256, 256
+    beam_stop_region = mask[center_y - 16 : center_y + 16, center_x - 16 : center_x + 16]
+    assert not np.any(beam_stop_region), "Beam stop area should be masked (False)"
+
+    # Full simulation check: observed_masked is strictly 0 wherever mask is False
+    obj = rng.uniform(0.2, 0.8, size=(64, 64)).astype(np.float32)
+    cfg = SimulationConfig(
+        include_beam_stop=True,
+        beam_stop_hw=16,
+        beam_stop_hh=16,
+        include_module_gaps=True,
+        gap_width=4,
+    )
+    res = simulate_diffraction(obj, config=cfg, rng=rng)
+    assert np.all(res.observed_masked[~res.valid_mask] == 0.0)

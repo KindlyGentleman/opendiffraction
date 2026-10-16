@@ -9,9 +9,9 @@ Following the recommended format from Gebru et al. (2021), *"Datasheets for Data
 - **For what purpose was the dataset created?**  
   To provide an open, transparent, fully reproducible, physics-based benchmark dataset for coherent diffraction imaging (CDI), phase retrieval, and detector defect inpainting without proprietary third-party image licensing restrictions.
 - **Who created the dataset?**  
-  OpenDiffraction computational optics and scientific machine learning contributors.
+  Muhammad Kamal (GitHub: `@KindlyGentleman`, Kaggle: `@hamadmuhammadkamal`).
 - **Who funded the creation of the dataset?**  
-  Open research initiative with self-hosted computational resources.
+  Independent research initiative conducted with personal computational resources.
 
 ---
 
@@ -20,7 +20,7 @@ Following the recommended format from Gebru et al. (2021), *"Datasheets for Data
 - **What do the instances that comprise the dataset represent?**  
   Each instance consists of a paired 2D synthetic ground-truth transmission object ($64 \times 64$) and its corresponding degraded Fraunhofer diffraction pattern ($512 \times 512$), accompanied by an acquisition validity mask and simulation metadata.
 - **How many instances are there in total?**  
-  Configurable via presets: `quick` (48 samples, 1 per profile), `starter` (2,400 samples, 50 per profile), and `full` (9,600 samples, 200 per profile), or domain-specific scenarios (XFEL, synchrotron, optical lab).
+  The published Kaggle release is a **48-sample Quick-Release Benchmark** containing exactly 1 curated sample per physical variation profile (`V01` through `V48`: 35 train, 5 validation, 3 test, 5 test_ood). Note that 48 samples are strictly insufficient for training supervised deep neural networks from scratch. Users can procedurally generate larger volumes (e.g. `starter` with 2,400 samples, or `full` with 9,600+ samples) using the included generator scripts.
 - **Does the dataset contain all possible instances or is it a sample?**  
   It is a comprehensive sample across 48 controlled variation profiles (V01 - V48) spanning 6 scientific groups, 6 modular forward physics models (F1 - F6), 6 experimental scenarios (S1 - S6), and 12 scientific machine learning benchmark tasks (T1 - T12).
 - **Is what is being measured representative?**  
@@ -85,8 +85,8 @@ Following the recommended format from Gebru et al. (2021), *"Datasheets for Data
 ## 7. Maintenance
 
 - **Who is supporting/hosting/maintaining the dataset?**  
-  OpenDiffraction open-source repository maintainers.
+  Muhammad Kamal (GitHub: `@KindlyGentleman`, Kaggle: `@hamadmuhammadkamal`).
 - **How can the owner/curator/manager of the dataset be contacted?**  
-  Via GitHub issues and repository channels.
+  Via GitHub issues at [https://github.com/KindlyGentleman/opendiffraction/issues](https://github.com/KindlyGentleman/opendiffraction/issues) and Kaggle discussion channels.
 - **Will the dataset be updated?**  
   Yes, subsequent versioned releases (e.g. 3D CDI, ptychography, or experimental beamtime transfer extensions) will follow semantic versioning.
