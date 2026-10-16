@@ -1,6 +1,6 @@
 {
   "title": "OpenDiffraction: Synthetic CDI Patterns",
-  "subtitle": "Physics-based diffraction images with ground truth and controlled detector imperfections",
+  "subtitle": "Physics-based coherent diffraction images with ground truth and benchmarks",
   "id": "opendiffraction_team/opendiffraction-synthetic-cdi",
   "licenses": [
     {
@@ -12,7 +12,9 @@
     "computer-vision",
     "image-processing",
     "optics",
-    "synthetic-data"
+    "synthetic-data",
+    "phase-retrieval",
+    "inverse-problems"
   ],
-  "description": "OpenDiffraction is a physics-based synthetic dataset for coherent diffraction imaging (CDI) and phase retrieval benchmarking."
+  "description": "OpenDiffraction is a physics-based synthetic dataset for coherent diffraction imaging (CDI) and phase retrieval benchmarking. Fully reproducible and compatible with DPR (Nature Comms / npj Comp Mat 2025). GitHub Repository: https://github.com/KindlyGentleman/opendiffraction"
 }
