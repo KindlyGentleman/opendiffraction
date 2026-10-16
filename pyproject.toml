@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "opendiffraction"
-version = "2.0.0"
+version = "3.0.0"
 description = "Physics-based synthetic coherent diffraction dataset generator for phase retrieval benchmarking"
 readme = "README.md"
 license = { text = "BSD-2-Clause" }

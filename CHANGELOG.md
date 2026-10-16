@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.0.0] - 2026-10-16
+
+### Added
+- **Audited 1,000-Observation Training Pilot**:
+  - Exactly 1,000 observations across 250 distinct base objects with 4 independent acquisitions per object.
+  - Zero object-level leakage across train (644), valid (140), test (116), and test_ood (100) splits.
+  - Full representation across all 48 variation profiles (V01-V48) and all 6 forward models (F1-F6).
+  - High-performance HDF5 sharding (7 shards, gzip level 4 + shuffle filter, 895.35 MB storage).
+- **Turnkey PyTorch Integration (`OpenDiffractionTorchDataset`)**:
+  - Direct PyTorch Dataset and DataLoader support with worker-safe lazy handle caching.
+  - Multiprocessing safe under Windows and Linux (65-132 samples/second throughput on CPU).
+  - Harmonized task targets for phase retrieval, denoising, inpainting, and hit classification.
+- **Independent Benchmark Baselines & Audits**:
+  - Classical iterative phase retrieval (HIO/ER), spatial denoising, nearest-neighbor inpainting, and energy-based hit classification.
+  - Documented physical failure modes: twin-image stagnation, central beamstop shadow underestimation, and synthetic hit-gap limitations.
+- **Experimental CXI NeXus Adapter (`CXIExperimentalAdapter`)**:
+  - Read-only ingestion of Coherent X-ray Imaging (CXI) files with dynamic NeXus path discovery.
+  - Spatial standardization to 512x512 via center cropping or zero-padding with validity mask tracking.
+  - Physical constant conversion from photon energy (eV) to radiation wavelength (m).
+
+---
+
 ## [2.0.0] - 2026-10-16
+
 
 ### Added
 - **6 Modular Forward Physics Models (F1 - F6)**:

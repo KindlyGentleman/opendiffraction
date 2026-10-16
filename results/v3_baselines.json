@@ -1,0 +1,65 @@
+{
+  "T1_Phase_Retrieval": {
+    "mean_aligned_ssim": 0.012834670549766633,
+    "std_aligned_ssim": 0.017025530081428576,
+    "median_aligned_ssim": 0.00575319900429261,
+    "mean_aligned_mse": 0.025500440620817244,
+    "mean_r_factor": 0.14833521547011247,
+    "evaluated_samples": 20,
+    "wall_time_s": 115.72911071777344,
+    "throughput_sps": 0.17281736527617197
+  },
+  "T2_Denoising": {
+    "mean_psnr_db": 55.25794105529785,
+    "std_psnr_db": 8.032300154149825,
+    "median_psnr_db": 57.83740043640137,
+    "mean_ssim": 0.9970193484642514,
+    "mean_r_factor": 0.32168058782815934,
+    "evaluated_samples": 50,
+    "wall_time_s": 4.221701622009277,
+    "throughput_sps": 11.843565575390663
+  },
+  "T3_Inpainting": {
+    "mean_masked_region_mae": 754.4997302246094,
+    "median_masked_region_mae": 225.22722625732422,
+    "mean_overall_psnr_db": 36.78551357269287,
+    "std_overall_psnr_db": 16.118010341705606,
+    "mean_overall_ssim": 0.9955549173483399,
+    "evaluated_samples": 50,
+    "wall_time_s": 2.9677093029022217,
+    "throughput_sps": 16.848011343666084
+  },
+  "T4_Hit_Classification": {
+    "energy_baseline": {
+      "accuracy": 1.0,
+      "balanced_accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "confusion_matrix_tn_fp_fn_tp": [
+        [
+          4,
+          0
+        ],
+        [
+          0,
+          136
+        ]
+      ]
+    },
+    "majority_class_baseline": {
+      "accuracy": 0.9714285714285714,
+      "balanced_accuracy": 0.5
+    },
+    "random_baseline": {
+      "accuracy": 0.5357142857142857
+    },
+    "class_counts": {
+      "total_samples": 140,
+      "true_hits": 136,
+      "true_non_hits": 4
+    },
+    "wall_time_s": 1.2862393856048584,
+    "throughput_sps": 108.8444356212623
+  }
+}

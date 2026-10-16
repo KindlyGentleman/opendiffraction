@@ -14,24 +14,24 @@
 ---
 
 > [!IMPORTANT]
-> **Dataset Scope Notice: 48-Sample Quick-Release Benchmark**  
-> The published release on Kaggle is a **48-sample Quick-Release Benchmark** containing exactly 1 representative sample per physical profile (`V01` through `V48`: 35 train, 5 validation, 3 test, 5 test_ood).  
-> **48 samples are strictly insufficient for training supervised deep neural networks from scratch.**  
-> This benchmark is designed for:
-> 1. Rapid algorithmic benchmarking of classical iterators (ER, HIO, Shrinkwrap, RAAR).
-> 2. Zero-shot and fine-tuning evaluation of pre-trained deep phase retrieval networks.
-> 3. Out-of-distribution (OOD) stress testing across partial coherence, beam stops, and complex phase objects.
-> 
-> To generate large-scale training volumes ($10^4$ to $10^5$ samples) for training neural networks from scratch, use the included generator:
-> ```bash
-> python -m opendiffraction.cli generate --preset full --samples 10000 --output ./my_full_dataset
-> ```
+> **OpenDiffraction 3.0 Training-Data Pilot Release (1,000 Observations)**
+>
+> The audited Kaggle dataset release contains **1,000 verified synthetic observations** across **250 distinct base objects** (4 independent acquisitions per object) across 7 HDF5 shards (~895 MB):
+> - **Train**: 644 observations (161 base objects)
+> - **Validation**: 140 observations (35 base objects)
+> - **Test (In-Distribution)**: 116 observations (29 base objects)
+> - **Test (Out-of-Distribution)**: 100 observations (25 base objects)
+>
+> Zero data leakage: object identities are strictly partitioned across splits with zero overlap.
+> Direct PyTorch DataLoader integration is provided via `opendiffraction.io.torch_dataset.OpenDiffractionTorchDataset`.
+
 
 ---
 
-**OpenDiffraction 2.0** is an open-source, reproducible, physics-based synthetic diffraction imaging generator and machine learning benchmark suite designed for public publication on Kaggle. It simulates Fraunhofer coherent X-ray diffraction, Gaussian Schell-model partial spatial coherence, mixed Poisson shot noise, Gaussian detector electronics noise, central beam stops, and irregular detector gaps.
+**OpenDiffraction 3.0** is an open-source, reproducible, physics-based synthetic diffraction imaging generator and machine learning benchmark suite designed for public publication on Kaggle. It simulates Fraunhofer coherent X-ray diffraction, Gaussian Schell-model partial spatial coherence, mixed Poisson shot noise, Gaussian detector electronics noise, central beam stops, and irregular detector gaps.
 
 OpenDiffraction produces datasets that are directly compatible with the Deep Phase Retrieval ([DPR](https://github.com/sungyun98/DPR)) neural network while offering an extended scientific format containing unscaled physical ground-truth objects, uncorrupted ideal intensities, expected photon rates, and complete experimental manifests.
+
 
 <p align="center">
   <img src="assets/figure_1_workflow.png" width="100%" alt="OpenDiffraction Simulation Pipeline and Experimental Degradations">
