@@ -31,9 +31,14 @@ ENV/
 output/
 output_quick/
 output_full/
+output_v3/
+output_staging/
 kaggle_release/data/
 kaggle_release/*.cxi
 kaggle_release/*.h5
+kaggle_release_v3/
+tmp_kaggle_verification/
+
 
 # Credentials and private tokens
 kaggle.json

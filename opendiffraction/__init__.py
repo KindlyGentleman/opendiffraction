@@ -3,5 +3,18 @@
 A reproducible scientific dataset generator and benchmark suite.
 """
 
-__version__ = "0.1.0"
-__author__ = "OpenDiffraction Contributors"
+from .version import (
+    GENERATOR_VERSION,
+    MODEL_VERSION,
+    SCHEMA_VERSION,
+    __version__,
+)
+
+__author__ = "Muhammad Kamal"
+
+__all__ = [
+    "__version__",
+    "GENERATOR_VERSION",
+    "SCHEMA_VERSION",
+    "MODEL_VERSION",
+]

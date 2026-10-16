@@ -1,0 +1,73 @@
+{
+  "total_samples": 1000,
+  "num_shards": 7,
+  "total_bytes": 938847195,
+  "total_mb": 895.35,
+  "total_decimal_gb": 0.9388,
+  "total_binary_gib": 0.8744,
+  "avg_bytes_per_sample": 938847.2,
+  "split_counts": {
+    "train": 644,
+    "valid": 140,
+    "test": 116,
+    "test_ood": 100
+  },
+  "manifest_counts": {
+    "task_1": {
+      "test.csv": 116,
+      "test_ood.csv": 100,
+      "train.csv": 644,
+      "val.csv": 140
+    },
+    "task_2": {
+      "test.csv": 116,
+      "test_ood.csv": 0,
+      "train.csv": 644,
+      "val.csv": 140
+    },
+    "task_3": {
+      "test.csv": 116,
+      "test_ood.csv": 0,
+      "train.csv": 644,
+      "val.csv": 140
+    },
+    "task_4": {
+      "test.csv": 116,
+      "test_ood.csv": 100,
+      "train.csv": 644,
+      "val.csv": 140
+    }
+  },
+  "num_base_objects": 250,
+  "acquisitions_per_object": 4,
+  "zero_leakage_verified": true,
+  "pairwise_split_intersections": {
+    "train_\u2229_valid": 0,
+    "train_\u2229_test": 0,
+    "train_\u2229_test_ood": 0,
+    "valid_\u2229_test": 0,
+    "valid_\u2229_test_ood": 0,
+    "test_\u2229_test_ood": 0
+  },
+  "profiles_represented": 48,
+  "forward_models_present": [
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6"
+  ],
+  "hit_status_counts": {
+    "single_hit": 940,
+    "multi_particle_hit": 20,
+    "off_center_hit": 20,
+    "non_hit": 20
+  },
+  "reproducibility": {
+    "evaluated_samples": 10,
+    "bit_for_bit_matches": 10,
+    "mismatches": [],
+    "reproducibility_status": "PASS"
+  }
+}

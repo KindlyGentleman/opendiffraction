@@ -45,7 +45,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_gen.add_argument("--device", default="cpu", help="Compute device (cpu)")
     p_gen.add_argument("--resume", action="store_true", default=True, help="Resume previous generation run")
     p_gen.add_argument("--no-resume", dest="resume", action="store_false", help="Do not resume; overwrite/restart")
+    p_gen.add_argument("--overwrite", action="store_true", default=False, help="Explicitly overwrite existing output directory when not resuming")
+    p_gen.add_argument("--storage-mode", choices=["compact", "extended"], default="extended", help="HDF5 storage mode (compact or extended)")
+    p_gen.add_argument("--compression", choices=["gzip", "lzf", "none"], default="gzip", help="HDF5 compression filter")
     p_gen.add_argument("--max-disk-gb", type=float, default=None, help="Maximum allowed disk space in GB")
+    p_gen.add_argument("--num-workers", type=int, default=4, help="Number of worker threads for parallel simulation")
     p_gen.add_argument("--dry-run", action="store_true", help="Perform preflight check without writing data")
     p_gen.add_argument("--export-cxi", action="store_true", help="Export validation subset to official CXI NeXus format")
     p_gen.add_argument("--export-tasks", action="store_true", help="Export independent task manifests (T1 - T12)")
@@ -113,7 +117,11 @@ def main(argv: list[str] | None = None) -> int:
             batch_size=args.batch_size,
             shard_size=args.shard_size,
             resume=args.resume,
+            overwrite=args.overwrite,
+            storage_mode=args.storage_mode,
+            compression=args.compression,
             max_disk_gb=args.max_disk_gb,
+            num_workers=args.num_workers,
             dry_run=args.dry_run,
             export_cxi=export_cxi,
             export_tasks=export_tasks,
