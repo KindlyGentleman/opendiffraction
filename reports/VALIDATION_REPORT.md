@@ -1,9 +1,9 @@
 # OpenDiffraction Validation Report
 
-**Dataset Directory**: `D:\03_Proyek\Diffraction_Dataset\output`  
+**Dataset Directory**: `D:\03_Proyek\Diffraction_Dataset\output_quick`  
 **Status**: **ALL CHECKS PASSED**  
-**Total Shards**: `7`  
-**Total Validated Samples**: `2400`  
+**Total Shards**: `4`  
+**Total Validated Samples**: `48`  
 
 ---
 

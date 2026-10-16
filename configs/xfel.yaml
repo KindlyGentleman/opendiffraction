@@ -1,0 +1,14 @@
+# OpenDiffraction 2.0 - Scenario S1: XFEL Single-Particle Imaging
+name: xfel
+scenario_id: S1
+facility: XFEL
+nominal_photon_energy_kev: 8.0
+detector_pixel_pitch_um: 110.0
+sample_detector_distance_m: 0.5
+num_samples: 1200
+profiles: ["V01", "V02", "V03", "V34", "V37", "V38", "V41", "V42"]
+output_dir: output_xfel
+random_seed: 42
+compression: gzip
+compression_level: 4
+export_cxi: true

@@ -3,11 +3,12 @@
 ## Dataset Title
 **OpenDiffraction: Physics-Based Synthetic Coherent Diffraction Patterns for Phase Retrieval and Image Reconstruction**
 
-- **Dataset Version**: 0.1.0
+- **Dataset Version**: 2.0.0
 - **Primary Domain**: Coherent Diffraction Imaging (CDI), Computational Optics, Phase Retrieval, Machine Learning Inverse Problems
 - **License**: Creative Commons Attribution 4.0 International (CC BY 4.0)
 - **Primary Reference Paper**: Lee et al. (2025), *"Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers"*, Nature Communications / npj Computational Materials, DOI: [10.1038/s41524-025-01569-7](https://doi.org/10.1038/s41524-025-01569-7).
 - **Reference Repository**: [https://github.com/sungyun98/DPR](https://github.com/sungyun98/DPR) (BSD 2-Clause License)
+- **CXI Standard**: [https://cxidb.org/cxi.html](https://cxidb.org/cxi.html)
 
 ---
 
@@ -17,7 +18,7 @@
 > **ALL DATA IN THIS DATASET ARE NUMERICALLY SIMULATED USING FIRST-PRINCIPLES FOURIER OPTICS.**
 > None of the patterns represent experimentally measured beamtime exposures.
 > High performance on synthetic diffraction benchmarks **does not prove** automatic generalization to real experimental X-ray Free-Electron Laser (XFEL) or synchrotron beamline data.
-> This dataset is inspired by the Deep Phase Retrieval (DPR) forward model but is an independent, 100% procedural benchmark and is **not an official DPR or SLAC/SACLA release**.
+> This dataset is inspired by the Deep Phase Retrieval (DPR) forward model and CXIDB experimental standards, but is an independent, 100% procedural benchmark and is **not an official DPR or SLAC/SACLA release**.
 
 ---
 
@@ -31,52 +32,116 @@ Real-world XFEL and synchrotron diffraction measurements suffer from severe expe
 - **Photon shot noise**: low incident flux regimes yielding discrete Poisson statistics.
 - **Detector electronics noise**: additive Gaussian readout fluctuations that yield signed values.
 - **Partial spatial coherence**: finite transverse beam coherence causing speckle blur.
+- **Parasitic background scattering**: ambient gas, sample carrier support films, liquid carrier solvent rings, slit flare, and cosmic ray hits.
 
 OpenDiffraction establishes an open, reproducible, parameter-controlled benchmark to test both classical iterative phase retrieval algorithms (HIO, ER, RAAR) and deep-learning reconstructors (DPR, FFC-ResNets, U-Nets, diffusion models) under systematically controlled physical degradations.
 
 ---
 
-## 3. Physical Forward Model
+## 3. Physical Forward Models (F1 - F6)
 
-### 3.1 Fraunhofer Diffraction
-For an object transmission density field $O(\mathbf{r})$ placed within a $64 \times 64$ window centered in a $512 \times 512$ detector frame:
-$$A(\mathbf{q}) = \mathcal{F}_{2\text{D}}[O(\mathbf{r})]$$
-$$I_{\text{ideal}}(\mathbf{q}) = |A(\mathbf{q})|^2$$
-where $\mathcal{F}_{2\text{D}}$ is the centered 2D Fourier transform (zero-frequency DC situated at pixel `(256, 256)`). The oversampling ratio is $\sigma = 512 / 64 = 8$ along each Cartesian axis, satisfying the Shannon/Nyquist oversampling condition ($\sigma \ge 2$) required for phase retrieval.
+OpenDiffraction 2.0 implements 6 modular, physically grounded forward simulation models:
 
-### 3.2 Gaussian Schell-Model Partial Spatial Coherence
-Under the Gaussian Schell-model (GSM), finite transverse spatial coherence degrades diffraction fringe visibility. The autocorrelation of the object is damped by a Gaussian envelope centered at **zero spatial lag**:
-$$\Gamma(\Delta \mathbf{r}) = \mathcal{F}^{-1}[I_{\text{ideal}}](\Delta \mathbf{r}) \cdot \exp\left(-\frac{\|\Delta \mathbf{r}\|^2}{2 \ell_{\text{coh}}^2}\right)$$
-$$I_{\text{expected}}(\mathbf{q}) = \left| \mathcal{F}[\Gamma(\Delta \mathbf{r})] \right|$$
-OpenDiffraction strictly follows the upstream corrected standard (DPR commit `1952ee743a4913f1ae5fd3ca51a006c53709e8ae`), ensuring monotonic fringe damping.
-
-### 3.3 Photon Flux Normalization
-$$s = \frac{N_{\text{photons}}}{\sum_{\mathbf{q}} I_{\text{expected}}(\mathbf{q})}, \quad \lambda_i = s \cdot I_{\text{expected}}(\mathbf{q}_i)$$
-where $\lambda_i$ is the expected incident photon count on detector pixel $i$.
-
-### 3.4 Poisson Shot Noise & Gaussian Readout Noise
-$$K_i \sim \text{Poisson}(\lambda_i)$$
-$$Y_i = K_i + \epsilon_i, \quad \epsilon_i \sim \mathcal{N}(0, \sigma_{\text{read}}^2)$$
-where $\sigma_{\text{read}} = 1 / (2 \sqrt{2 \ln 2}) \approx 0.42466$ gives a full-width at half-maximum (FWHM) of 1 photon count. Signed detector readouts ($Y_i < 0$) are preserved in the scientific files to eliminate dark-current threshold bias.
+- **Model F1 (Fraunhofer Coherent Diffraction)**: Far-field intensity from real or complex transmission densities.
+- **Model F2 (Partial-Coherence Diffraction)**: Gaussian Schell-model (GSM) autocorrelation damping centered at zero lag, or orthogonal multimode decomposition.
+- **Model F3 (Thin-Object Coherent Transmission)**: Probe field multiplication including wavefront curvature, astigmatism, coma, and pointing jitter.
+- **Model F4 (Fresnel Diffraction)**: Near-field propagation in SI units (wavelength, distance, pixel size) with Shannon sampling bounds.
+- **Model F5 (Polychromatic Diffraction)**: Wavelength-integrated intensity accounting for reciprocal-space radial coordinate dilation across pink-beam bandwidths.
+- **Model F6 (3D Particle Scattering)**: 3D scalar density volumes with continuous Euler rotation and Born projection approximation.
 
 ---
 
-## 4. Controlled Experimental Profiles (V01 - V12)
+## 4. 48 Controlled Variation Profiles (V01 - V48)
 
-| Profile ID | Profile Name | Primary Swept Variable | Controlled / Fixed Variables | Purpose |
-|---|---|---|---|---|
-| **V01** | Clean Coherent Diffraction | Object Geometry | $\ell_{\text{coh}}=\infty$, No noise, No beam stop | Theoretical upper reconstruction limit |
-| **V02** | Geometry Diversity | 5 Shape Families (A-E) | $\ell_{\text{coh}}=200$, $N_{\text{ph}}=3\times 10^6$, $\sigma_{\text{read}}=\text{std}$ | Shape and morphology generalization |
-| **V03** | Density Heterogeneity | Uniform, binary, graded, textured | Standard beam stop and acquisition | Internal density and contrast recovery |
-| **V04** | Photon Starvation | $N_{\text{photons}} \in [10^3, 10^8]$ | Fixed object morphology | Low-flux phase retrieval breakdown |
-| **V05** | Partial Coherence | $\ell_{\text{coh}} \in [\infty, 25]$ px | Zero readout noise | Speckle fringe visibility decay |
-| **V06** | Readout Noise | $\sigma_{\text{read}} \in [0, 3.0]$ counts | High flux ($10^7$ photons) | Disentangling additive electronics noise |
-| **V07** | Beam-Stop Size | $4\times 4$ to $48\times 48$ px | Centered and shifted positions | Low-frequency missing data tolerance |
-| **V08** | Irregular Defects | Dead pixels, clusters, stripes, gaps | Procedural defect generators | Robustness to incomplete detector data |
-| **V09** | Saturation & Hot Pixels | Full-well threshold & hot pixels | High flux ($10^7$ photons) | Sensor nonlinearities and clipping |
-| **V10** | Alignment Errors | Sub-pixel & integer shifts $(\delta y, \delta x)$ | Standard noise and beam stop | Beam-center miscalibration sensitivity |
-| **V11** | Combined Realistic | Simultaneous composite degradations | Real-world synchrotron/XFEL parameters | Primary real-world benchmark |
-| **V12** | OOD Stress Tests | Extreme multivariate adverse stress | Held-out fractals, extreme starvation | Out-of-distribution failure mode analysis |
+OpenDiffraction 2.0 organizes 48 labeled experimental profiles across 6 physical groups:
+
+1. **Group 1: Real-World Specimens (V01 - V12)**:
+   - V01: Cell-Like Biological Phantoms (membrane, nucleus, organelles).
+   - V02: Virus-Like Particles (capsid shells, inner core density).
+   - V03: Protein-Complex-Inspired Aggregates (multi-subunit clusters).
+   - V04: Core-Shell Nanoparticles (dense core, dielectric shell).
+   - V05: Ellipsoidal Nanoparticles (anisotropic aspect ratios).
+   - V06: Nanorods and Nanowires (high aspect ratio 1D structures).
+   - V07: Multi-Particle Clusters (stochastic oligomeric assemblies).
+   - V08: Porous Matrix / Aerogels (spatially correlated random media).
+   - V09: Colloidal Crystal Assemblies (hexagonal and square lattice ordering).
+   - V10: Lithographic Test Patterns (Siemens star, lines, gratings).
+   - V11: Defect Structures (internal micro-cracks and void cavities).
+   - V12: Mixed-Density Phase-Separated Mixtures (bimodal material contrast).
+
+2. **Group 2: Illumination & Coherence (V13 - V20)**:
+   - V13: Fully Coherent Plane-Wave Illumination.
+   - V14: Moderate Partial Spatial Coherence (GSM, $l_{\text{coh}} = 150$ px).
+   - V15: Low Partial Spatial Coherence (GSM, $l_{\text{coh}} = 40$ px).
+   - V16: Anisotropic Partial Coherence ($l_{\text{coh}, y} \ne l_{\text{coh}, x}$).
+   - V17: Focused Beam Illumination (Gaussian probe amplitude envelope).
+   - V18: Wavefront Curvature / Defocus (quadratic phase profile).
+   - V19: Beam Pointing Jitter (sub-pixel stochastic translations).
+   - V20: Polychromatic Pink-Beam Illumination (finite spectral bandwidth $\Delta\lambda/\lambda$).
+
+3. **Group 3: Detector Realism & Artifacts (V21 - V30)**:
+   - V21: Baseline Readout Noise ($\sigma_{\text{read}} = 0.425$ count).
+   - V22: High Readout Noise ($\sigma_{\text{read}} = 2.0$ counts).
+   - V23: Pure Poisson Counting (ideal noiseless photon counting).
+   - V24: Extreme Photon Starvation ($10^3 - 10^4$ total photons).
+   - V25: Dynamic Range Saturation (full-well capacity clipping).
+   - V26: Analog-to-Digital Quantization (integer/sub-bit ADC binning).
+   - V27: Hot Pixels and Persistent Stuck Pixels.
+   - V28: Dead Pixel Clusters and Random Module Defects.
+   - V29: Readout Line Dropout Stripes (horizontal/vertical channel loss).
+   - V30: Multi-Tile Module Gaps (cross-gap detector tiling).
+
+4. **Group 4: Background & Parasitic Scattering (V31 - V36)**:
+   - V31: High-Vacuum Clean Background (zero parasitic scatter).
+   - V32: Ambient Gas Scattering Background (isotropic central diffuse halo).
+   - V33: Sample Support Film Halo (amorphous carbon substrate ring).
+   - V34: Solvent / Water Ring (liquid jet diffuse diffraction ring).
+   - V35: Beamline Parasitic Scattering (slits and aperture diffraction streaks).
+   - V36: Stray Radiation / Cosmic Ray Hits (sharp high-amplitude pixel tracks).
+
+5. **Group 5: Experimental Acquisition & Hit Finding (V37 - V42)**:
+   - V37: High-Flux Hits ($10^7$ photons, well-centered pulse).
+   - V38: Low-Flux Hits ($5 \times 10^4$ photons, weak scattering).
+   - V39: Centered Particle Hits.
+   - V40: Off-Center Particle Hits (stochastic beam displacement).
+   - V41: Multi-Particle Hits (multiple scatterers in pulse focus).
+   - V42: Non-Hits / Blank Solvent Exposures (empty carrier background).
+
+6. **Group 6: Advanced Physics & Out-of-Distribution Regimes (V43 - V48)**:
+   - V43: Weak Phase Specimen (phase contrast with uniform amplitude).
+   - V44: Strong Phase Specimen (topological optical vortex phase depth).
+   - V45: Near-Field Fresnel Regime ($N_F \approx 1$ SI propagation).
+   - V46: 3D Particle Random Orientation (continuous Euler rotation projections).
+   - V47: Mixed Multi-Component Specimen (compound phase-amplitude contrast).
+   - V48: Compound Stress Scenario (simultaneous multi-defect adverse conditions).
+
+---
+
+## 5. 6 Real-World Acquisition Scenarios (S1 - S6)
+
+- **S1 (XFEL Single-Particle Imaging)**: Femtosecond pulse duration, low photon counts, partial coherence, liquid jet background.
+- **S2 (Synchrotron Beamline CDI)**: Monochromatic flux, long exposure, ambient gas background, module gaps.
+- **S3 (Nanomaterials Characterization)**: Engineered nanoparticles, high-resolution oversampling, medium flux.
+- **S4 (Biological Specimen CDI)**: Radiation-sensitive cellular phantoms, low dose, water ring background.
+- **S5 (Optical Tabletop CDI)**: Visible laser diode illumination, high photon counts, high spatial coherence.
+- **S6 (Detector Characterization & QA)**: Defect stress benchmark with elevated noise, dead modules, and bit errors.
+
+---
+
+## 6. 12 Scientific Machine Learning Benchmark Tasks (T1 - T12)
+
+- **T1**: Supervised Phase Retrieval
+- **T2**: Diffraction Pattern Denoising
+- **T3**: Detector Inpainting & Beam-Stop Recovery
+- **T4**: Hit Finding and Frame Classification
+- **T5**: Defect Segmentation
+- **T6**: Particle Morphology Classification
+- **T7**: Physical Parameter Estimation (flux, coherence, rotation)
+- **T8**: Out-of-Distribution Anomaly Detection
+- **T9**: Cross-Beamline Domain Generalization
+- **T10**: Self-Supervised Representation Learning
+- **T11**: Reconstruction Uncertainty Quantification
+- **T12**: Physics-Consistent Forward/Inverse Optimization
 
 ---
 

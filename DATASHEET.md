@@ -20,13 +20,13 @@ Following the recommended format from Gebru et al. (2021), *"Datasheets for Data
 - **What do the instances that comprise the dataset represent?**  
   Each instance consists of a paired 2D synthetic ground-truth transmission object ($64 \times 64$) and its corresponding degraded Fraunhofer diffraction pattern ($512 \times 512$), accompanied by an acquisition validity mask and simulation metadata.
 - **How many instances are there in total?**  
-  Configurable via presets: `quick` (48 samples), `starter` (2,400 samples), and `full` (9,600 samples).
+  Configurable via presets: `quick` (48 samples, 1 per profile), `starter` (2,400 samples, 50 per profile), and `full` (9,600 samples, 200 per profile), or domain-specific scenarios (XFEL, synchrotron, optical lab).
 - **Does the dataset contain all possible instances or is it a sample?**  
-  It is a representative sample across 5 shape families, 5 density textures, and 12 controlled experimental variation profiles.
+  It is a comprehensive sample across 48 controlled variation profiles (V01 - V48) spanning 6 scientific groups, 6 modular forward physics models (F1 - F6), 6 experimental scenarios (S1 - S6), and 12 scientific machine learning benchmark tasks (T1 - T12).
 - **Is what is being measured representative?**  
-  The dataset samples cover 6 orders of magnitude in photon budget ($10^3$ to $10^8$ photons), spatial coherence lengths from infinity down to 25 pixels, and diverse beam-stop and detector defect geometries.
+  The dataset samples cover 6 orders of magnitude in photon budget ($10^3$ to $10^8$ photons), spatial coherence lengths from infinity down to 25 pixels, diverse beam-stop and detector defect geometries, parasitic backgrounds (gas, carbon film, solvent ring, slit streaks, cosmic rays), probe aberrations, and SI-unit Fresnel and pink-beam regimes.
 - **Is any information missing?**  
-  Temporal coherence and thick-crystal dynamical scattering are deliberately excluded based on documented physical assumptions.
+  Temporal femtosecond pulse shape jitter and dynamical multi-slice scattering in thick 3D crystals are deliberately approximated by the kinematic Born projection and spectral integration models based on documented physical assumptions.
 - **Does the dataset contain data that might be considered confidential or sensitive?**  
   No. All data are entirely synthetic and procedural.
 - **Does the dataset contain data that relates to people?**  

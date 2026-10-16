@@ -131,3 +131,28 @@ def hybrid_input_output(
 
     recon = np.fft.fftshift(np.maximum(curr_obj, 0.0))
     return recon, errors
+
+
+def reconstruct_hio(
+    intensity: np.ndarray,
+    support_mask: np.ndarray | None = None,
+    max_iterations: int = 50,
+    beta: float = 0.8,
+    rng: np.random.Generator | None = None,
+) -> np.ndarray:
+    """Convenience wrapper for HIO phase retrieval from intensity."""
+    amp = np.sqrt(np.maximum(intensity, 0.0))
+    if support_mask is None:
+        ny, nx = intensity.shape
+        cy, cx = ny // 2, nx // 2
+        y, x = np.ogrid[:ny, :nx]
+        support_mask = (y - cy)**2 + (x - cx)**2 <= 20.0**2
+    recon, _ = hybrid_input_output(amp, support_mask, num_iterations=max_iterations, beta=beta, rng=rng)
+    ny, nx = recon.shape
+    cy, cx = ny // 2, nx // 2
+    cropped = recon[cy - 32 : cy + 32, cx - 32 : cx + 32]
+    p_max = np.max(cropped)
+    if p_max > 0:
+        cropped = cropped / p_max
+    return cropped.astype(np.float32)
+

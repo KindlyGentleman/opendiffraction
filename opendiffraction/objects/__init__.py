@@ -1,6 +1,14 @@
-"""Procedural and complex object generation modules."""
+"""Procedural, complex, and 3D object generation modules."""
 
 from .complex_objects import PhaseType, generate_phase_field
+from .object_3d import (
+    generate_3d_volume,
+    make_3d_cluster,
+    make_3d_core_shell,
+    make_3d_ellipsoid,
+    make_3d_nanorod,
+    make_3d_sphere,
+)
 from .procedural import (
     DensityType,
     ShapeFamily,
@@ -11,6 +19,20 @@ from .procedural import (
     make_porous_heterogeneous,
     make_structured_pattern,
 )
+from .specimens import (
+    make_cell_phantom,
+    make_cluster_assembly,
+    make_colloidal_crystal,
+    make_core_shell_nanoparticle,
+    make_crack_void,
+    make_ellipsoidal_nanoparticle,
+    make_lithographic_pattern,
+    make_mixed_density,
+    make_nanorod,
+    make_porous_matrix,
+    make_protein_aggregate,
+    make_virus_particle,
+)
 
 __all__ = [
     "ShapeFamily",
@@ -18,9 +40,27 @@ __all__ = [
     "PhaseType",
     "generate_procedural_object",
     "generate_phase_field",
+    "generate_3d_volume",
+    "make_3d_sphere",
+    "make_3d_core_shell",
+    "make_3d_ellipsoid",
+    "make_3d_nanorod",
+    "make_3d_cluster",
     "make_basic_geometric",
     "make_particle_blob",
     "make_multiple_scatterers",
     "make_porous_heterogeneous",
     "make_structured_pattern",
+    "make_cell_phantom",
+    "make_virus_particle",
+    "make_protein_aggregate",
+    "make_core_shell_nanoparticle",
+    "make_ellipsoidal_nanoparticle",
+    "make_nanorod",
+    "make_cluster_assembly",
+    "make_porous_matrix",
+    "make_colloidal_crystal",
+    "make_lithographic_pattern",
+    "make_crack_void",
+    "make_mixed_density",
 ]

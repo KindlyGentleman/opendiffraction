@@ -1,0 +1,14 @@
+# OpenDiffraction 2.0 - Scenario S5: Educational & Optical Lab Bench
+name: optical_lab
+scenario_id: S5
+facility: Optical Laser Laboratory
+nominal_photon_energy_kev: 0.00196  # 632.8 nm He-Ne Laser
+detector_pixel_pitch_um: 6.45  # Standard CCD
+sample_detector_distance_m: 0.15
+num_samples: 600
+profiles: ["V10", "V13", "V21", "V45"]
+output_dir: output_optical_lab
+random_seed: 42
+compression: gzip
+compression_level: 4
+export_cxi: true

@@ -1,25 +1,53 @@
-# Python bytecode and caches
+# Python bytecode and build artifacts
 __pycache__/
 *.py[cod]
 *$py.class
-*.pytest_cache/
-.coverage
-htmlcov/
-
-# Build and egg-info
+*.so
 build/
 dist/
 *.egg-info/
+*.egg
 
-# Local virtual environment
-.venv/
+# Testing & coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# Virtual environments
 venv/
+.venv/
+env/
 ENV/
 
-# Large local datasets (keep release manifests and scripts)
-output/data/*.h5
-kaggle_release/data/*.h5
-*.tmp
-
-# Jupyter Checkpoints
+# Jupyter Notebook checkpoints
 .ipynb_checkpoints/
+
+# Large generated scientific datasets and binary formats
+*.h5
+*.hdf5
+*.cxi
+output/
+output_quick/
+output_full/
+kaggle_release/data/
+kaggle_release/*.cxi
+kaggle_release/*.h5
+
+# Credentials and private tokens
+kaggle.json
+access_token
+.kaggle/
+*.key
+*.token
+.env
+.env.*
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~

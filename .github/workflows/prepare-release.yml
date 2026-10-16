@@ -1,0 +1,39 @@
+name: Prepare Release Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      preset:
+        description: 'Dataset preset to package (quick, starter, full)'
+        required: true
+        default: 'starter'
+        type: choice
+        options:
+        - quick
+        - starter
+        - full
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+    - name: Generate dataset preset
+      run: |
+        python -m opendiffraction generate --preset ${{ github.event.inputs.preset }} --output ./release_data --export-cxi --export-tasks
+    - name: Validate dataset
+      run: |
+        python -m opendiffraction validate --dataset ./release_data --reports-dir ./release_reports
+    - name: Package Kaggle directory
+      run: |
+        python -m opendiffraction package --dataset ./release_data --output ./kaggle_release
+    - name: Verify checksums
+      run: |
+        cd kaggle_release && sha256sum -c checksums.sha256

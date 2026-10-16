@@ -1,0 +1,39 @@
+name: Tests and Scientific Validation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install pytest pytest-cov
+
+    - name: Run scientific unit tests
+      run: |
+        python -m pytest tests/test_physics_forward.py tests/test_coherence.py tests/test_noise_statistics.py tests/test_f1_to_f6.py tests/test_profiles_48.py tests/test_cxi.py -v
+
+    - name: Run quick generation smoke test
+      run: |
+        python -m opendiffraction generate --preset quick --output ./ci_output --seed 42
+        python -m opendiffraction validate --dataset ./ci_output --reports-dir ./ci_reports

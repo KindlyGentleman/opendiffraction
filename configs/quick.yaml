@@ -1,0 +1,17 @@
+# OpenDiffraction 2.0 - Quick Test Configuration
+name: quick
+version: "2.0.0"
+num_samples: 48
+samples_per_profile: 1
+splits:
+  train: 0.70
+  valid: 0.15
+  test: 0.15
+profiles: all  # V01 to V48
+output_dir: output_quick
+random_seed: 42
+object_size: [64, 64]
+detector_size: [512, 512]
+chunk_size: 16
+compression: gzip
+compression_level: 4

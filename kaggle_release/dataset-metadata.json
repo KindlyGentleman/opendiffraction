@@ -1,7 +1,7 @@
 {
   "title": "OpenDiffraction: Synthetic CDI Patterns",
   "subtitle": "Physics-based diffraction images with ground truth and controlled detector imperfections",
-  "id": "YOUR_KAGGLE_USERNAME/opendiffraction-synthetic-cdi",
+  "id": "opendiffraction_team/opendiffraction-synthetic-cdi",
   "licenses": [
     {
       "name": "CC-BY-4.0"

@@ -355,29 +355,12 @@ def generate_procedural_object(
     size: int = 64,
     rng: np.random.Generator | None = None,
     shape_subtype: str | None = None,
+    shape_family: ShapeFamily | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Synthesize a complete object with defined shape family and density texture.
+    """Synthesize a complete object with defined shape family and density texture."""
+    if shape_family is not None:
+        family = shape_family
 
-    Parameters
-    ----------
-    family : ShapeFamily
-        One of 'basic_geometric', 'particle_blob', 'multiple_scatterer', 'porous_heterogeneous', 'structured_pattern'.
-    density_type : DensityType
-        One of 'uniform', 'binary', 'graded', 'textured', 'piecewise_constant'.
-    size : int
-        Grid size (default 64).
-    rng : np.random.Generator or None
-        Random generator for reproducibility.
-    shape_subtype : str or None
-        Optional specific subtype within family.
-
-    Returns
-    -------
-    object_density : np.ndarray
-        Float32 array of shape (size, size), values in [0, 1].
-    support_mask : np.ndarray
-        Boolean array of shape (size, size) defining physical object boundary.
-    """
     if rng is None:
         rng = np.random.default_rng()
 

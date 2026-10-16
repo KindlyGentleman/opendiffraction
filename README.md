@@ -1,11 +1,11 @@
-# OpenDiffraction: Physics-Based Synthetic Coherent Diffraction Patterns for Phase Retrieval and Image Reconstruction
+# OpenDiffraction: Physics-Based Synthetic Coherent Diffraction Patterns for Phase Retrieval and Inverse Problems
 
 [![License: CC BY 4.0](https://img.shields.io/badge/License-CC_BY_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by/4.0/)
 [![License: BSD 2-Clause](https://img.shields.io/badge/Code_License-BSD_2--Clause-blue.svg)](https://opensource.org/licenses/BSD-2-Clause)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Physics: Fraunhofer CDI](https://img.shields.io/badge/physics-Fraunhofer_CDI-green.svg)](https://doi.org/10.1038/s41524-025-01569-7)
 
-**OpenDiffraction** is an open-source, reproducible, physics-based synthetic diffraction imaging generator and benchmark suite designed for public publication on Kaggle. It models Fraunhofer coherent X-ray diffraction, Gaussian Schell-model partial spatial coherence, mixed Poisson shot noise, Gaussian detector electronics noise, central beam stops, and irregular detector gaps.
+**OpenDiffraction 2.0** is an open-source, reproducible, physics-based synthetic diffraction imaging generator and machine learning benchmark suite designed for public publication on Kaggle. It simulates Fraunhofer coherent X-ray diffraction, Gaussian Schell-model partial spatial coherence, mixed Poisson shot noise, Gaussian detector electronics noise, central beam stops, and irregular detector gaps.
 
 OpenDiffraction produces datasets that are directly compatible with the Deep Phase Retrieval ([DPR](https://github.com/sungyun98/DPR)) neural network while offering an extended scientific format containing unscaled physical ground-truth objects, uncorrupted ideal intensities, expected photon rates, and complete experimental manifests.
 
@@ -13,26 +13,46 @@ OpenDiffraction produces datasets that are directly compatible with the Deep Pha
 
 ## Key Features
 
-1. **First-Principles Fourier Optics**:
-   - Fraunhofer far-field propagation via 2D FFT with centered zero frequency.
-   - Padded real-space objects ($64 \times 64 \to 512 \times 512$, oversampling $\sigma = 8$).
-   - Rigorous Parseval energy conservation and Friedel inversion symmetry.
-2. **Corrected Gaussian Schell-Model Partial Coherence**:
-   - Implements the corrected zero-lag autocorrelation damping matching upstream DPR commit `1952ee743a4913f1ae5fd3ca51a006c53709e8ae`.
-3. **Realistic Detector Degradations**:
-   - Mixed Poisson shot noise and additive Gaussian readout noise ($\text{FWHM} = 1$).
-   - Signed detector readouts preserved in scientific fields to eliminate dark-current threshold distortion.
-   - Central beam stops, detector module gaps, dead pixel clusters, and readout stripes.
-4. **100% Procedural Object Generation (Zero Proprietary Dependencies)**:
-   - 5 shape families: geometric, smooth blobs, multi-scatterers, porous structures, and structured lattices.
-   - 5 density textures: uniform, binary, graded, textured, and piecewise constant.
-   - Zero dependency on external third-party datasets (no EMNIST, CIFAR-100, or NVIDIA masks required).
-5. **12 Controlled Experimental Variation Profiles (V01 - V12)**:
-   - From clean coherent baselines to photon starvation ($10^3 - 10^8$ photons) and out-of-distribution stress tests.
-6. **Object-Disjoint Splitting**:
-   - 70% train / 15% valid / 15% test split strictly on base object identity (`group_id`). Zero data leakage.
-7. **Comprehensive Testing & Validation**:
-   - Automated 19-point pytest test suite verifying physics, statistical distributions, determinism, and DPR loading.
+1. **Modular Forward Physics Models (F1 - F6)**:
+   - **Model F1**: Far-field coherent Fraunhofer diffraction from real or complex transmission functions.
+   - **Model F2**: Partial spatial coherence using Gaussian Schell-model (GSM) autocorrelation damping or orthogonal multimode decomposition.
+   - **Model F3**: Thin-specimen coherent transmission under aberrated probe illumination (defocus, astigmatism, coma, jitter).
+   - **Model F4**: Fresnel near-field diffraction with wavelength, sample-to-detector distance, and pixel pitch in SI units.
+   - **Model F5**: Polychromatic pink-beam diffraction with wavelength-dependent reciprocal-space coordinate dilation.
+   - **Model F6**: 3D particle scattering from scalar volumes with continuous Euler rotations and Born projection approximation.
+
+2. **48 Controlled Experimental Variation Profiles (V01 - V48)**:
+   - **Group 1 (V01 - V12)**: Real-World Specimens (cells, viruses, protein aggregates, core-shell nanoparticles, nanorods, porous aerogels, colloidal assemblies, lithography, cracks).
+   - **Group 2 (V13 - V20)**: Illumination & Coherence (plane waves, moderate/low coherence, asymmetric coherence, wavefront curvature, pointing jitter, pink beams).
+   - **Group 3 (V21 - V30)**: Detector Realism (readout noise, quantization, Poisson shot noise, dynamic range saturation, dead pixels, stripes, module gaps).
+   - **Group 4 (V31 - V36)**: Background & Parasitic Scattering (gas scattering, carbon film halos, solvent rings, slit flare, cosmic ray hits).
+   - **Group 5 (V37 - V42)**: Acquisition & Hit Finding (high-flux hits, low-flux hits, beam centering, multi-particle hits, empty jet non-hits).
+   - **Group 6 (V43 - V48)**: Advanced Physics & Out-of-Distribution (pure phase objects, strong vortices, 3D rotations, compound stress regimes).
+
+3. **6 Acquisition Scenarios (S1 - S6)**:
+   - **S1 (XFEL Single-Particle)**: Femtosecond pulses, low photon counts, high partial coherence.
+   - **S2 (Synchrotron CDI)**: High monochromatic flux, long exposures, gas background.
+   - **S3 (Nanomaterials)**: Nanorods, core-shell particles, moderate photon budget.
+   - **S4 (Biological CDI)**: Low-dose biological phantoms, water halo, low damage threshold.
+   - **S5 (Optical Tabletop)**: Laser diode CDI, high coherence, visible wavelength.
+   - **S6 (Detector QA)**: Complex dead modules, bad pixels, high electronic readout noise.
+
+4. **12 Scientific Machine Learning Benchmark Tasks (T1 - T12)**:
+   - T1: Supervised Phase Retrieval
+   - T2: Diffraction Pattern Denoising
+   - T3: Inpainting and Beam-Stop Reconstruction
+   - T4: Single-Shot Hit Finding and Classification
+   - T5: Detector Defect Segmentation
+   - T6: Particle Morphology Classification
+   - T7: Physical Parameter Estimation
+   - T8: Out-of-Distribution Anomaly Detection
+   - T9: Cross-Beamline Domain Generalization
+   - T10: Self-Supervised Representation Learning
+   - T11: Phase Uncertainty Quantification
+   - T12: Physics-Consistent Inversion
+
+5. **Official CXI Format Support**:
+   - NeXus-compliant CXI (`.cxi`) export conforming to CXIDB standards (`cxidb.org/cxi.html`).
 
 ---
 
@@ -47,7 +67,7 @@ pip install -e .
 
 ### Command-Line Interface
 
-Generate quick smoke-test dataset (48 samples):
+Generate quick smoke-test dataset (48 samples, 1 per profile):
 ```bash
 python -m opendiffraction generate --preset quick --output ./output --seed 42
 ```
@@ -57,14 +77,24 @@ Generate full starter benchmark (2,400 samples):
 python -m opendiffraction generate --preset starter --output ./output --seed 42
 ```
 
+Generate using YAML config preset with CXI and task manifest exports:
+```bash
+python -m opendiffraction generate --config configs/xfel.yaml --export-cxi --export-tasks
+```
+
 Validate physics, statistics, and HDF5 integrity:
 ```bash
 python -m opendiffraction validate --dataset ./output --reports-dir ./reports
 ```
 
-Generate publication figures (Figures 1-8 and Kaggle cover):
+Generate publication figures (16 IEEE figures and contact sheets):
 ```bash
-python -m opendiffraction visualize --dataset ./output --output ./output/figures
+python -m opendiffraction visualize --dataset ./output --output ./output/figures --suite 16
+```
+
+Generate animated parameter sweep GIFs:
+```bash
+python -m opendiffraction animate --output ./output/figures/sweeps --type both
 ```
 
 Package dataset for Kaggle release:
@@ -74,20 +104,15 @@ python -m opendiffraction package --dataset ./output --output ./kaggle_release -
 
 ---
 
-## Variation Profiles Overview
+## Configuration Presets
 
-- **V01 — Clean Coherent Diffraction**: Ideal upper reconstruction limits.
-- **V02 — Geometry Diversity**: Generalization across 5 procedural shape families.
-- **V03 — Density Heterogeneity**: Continuous density recovery (graded, textured, piecewise).
-- **V04 — Photon Starvation**: Flux sweep across 6 orders of magnitude ($10^3 - 10^8$ photons).
-- **V05 — Partial Coherence**: Spatial coherence length sweep ($\ell_{\text{coh}} = \infty \to 25$ px).
-- **V06 — Readout Noise**: Additive electronic noise sweep ($\sigma_{\text{read}} = 0 \to 3.0$ counts).
-- **V07 — Beam-Stop Geometry**: Low-frequency loss across varying sizes and offsets.
-- **V08 — Irregular Defects**: Inpainting benchmark with dead pixels, stripes, and module gaps.
-- **V09 — Saturation & Hot Pixels**: Full-well capacity clipping and sensor hot spots.
-- **V10 — Alignment Errors**: Beam-center miscalibration sensitivity.
-- **V11 — Combined Realistic Degradation**: Composite synchrotron/XFEL degradation.
-- **V12 — Out-of-Distribution Stress**: Extreme adverse conditions held out for model testing.
+Pre-packaged YAML configurations are located in `configs/`:
+- `quick.yaml`: 48 samples (1 per profile V01 - V48) for fast end-to-end testing.
+- `starter.yaml`: 2,400 samples across all 48 profiles (50 per profile).
+- `full.yaml`: 9,600 samples for production machine learning training.
+- `xfel.yaml`: S1 XFEL single-particle acquisition scenario.
+- `synchrotron.yaml`: S2 synchrotron beamline scenario.
+- `optical_lab.yaml`: S5 optical tabletop CDI scenario.
 
 ---
 
@@ -102,7 +127,8 @@ python -m opendiffraction package --dataset ./output --output ./kaggle_release -
 
 1. Lee et al. (2025), *"Deep-learning real-time phase retrieval of imperfect diffraction patterns from X-ray free-electron lasers"*, Nature Communications / npj Computational Materials, DOI: [10.1038/s41524-025-01569-7](https://doi.org/10.1038/s41524-025-01569-7).
 2. Upstream DPR Repository: [https://github.com/sungyun98/DPR](https://github.com/sungyun98/DPR) (BSD 2-Clause License).
-3. Detailed compatibility and upstream history: [`docs/DPR_COMPATIBILITY.md`](docs/DPR_COMPATIBILITY.md).
+3. CXIDB Coherent X-ray Imaging Data Bank: [https://cxidb.org/](https://cxidb.org/).
+4. Detailed compatibility and upstream history: [`docs/DPR_COMPATIBILITY.md`](docs/DPR_COMPATIBILITY.md).
 
 ---
 

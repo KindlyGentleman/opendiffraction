@@ -61,6 +61,35 @@ def create_centered_beam_stop(
     return mask
 
 
+def create_beam_stop_holder_shadow(
+    shape: tuple[int, int] = (512, 512),
+    arm_angle_rad: float = 0.0,
+    arm_width: int = 5,
+    offset_y: int = 0,
+    offset_x: int = 0,
+) -> np.ndarray:
+    """Create linear shadow mask corresponding to the mechanical beam-stop holder arm."""
+    ny, nx = shape
+    cy = ny // 2 + offset_y
+    cx = nx // 2 + offset_x
+    y, x = np.mgrid[:ny, :nx]
+
+    # Coordinate system centered at beamstop
+    yp = y - cy
+    xp = x - cx
+
+    # Distance perpendicular to arm axis
+    arm_dist = np.abs(-np.sin(arm_angle_rad) * xp + np.cos(arm_angle_rad) * yp)
+    # Projection along arm: arm extends outwards from beamstop
+    arm_proj = np.cos(arm_angle_rad) * xp + np.sin(arm_angle_rad) * yp
+
+    mask = np.ones(shape, dtype=bool)
+    # Shadow extends from center outwards along the arm direction
+    shadow = (arm_dist <= arm_width / 2.0) & (arm_proj >= 0)
+    mask[shadow] = False
+    return mask
+
+
 def create_module_gaps(
     shape: tuple[int, int] = (512, 512),
     gap_width: int = 4,
@@ -182,6 +211,9 @@ def composite_detector_mask(
     beam_stop_hh: int = 16,
     beam_stop_offset: tuple[int, int] = (0, 0),
     circular_beam_stop: bool = False,
+    include_holder_arm: bool = False,
+    arm_angle_rad: float = 0.0,
+    arm_width: int = 5,
     include_module_gaps: bool = False,
     gap_width: int = 4,
     random_pixel_fraction: float = 0.0,
@@ -208,6 +240,16 @@ def composite_detector_mask(
             circular=circular_beam_stop,
         )
         mask &= bs_mask
+
+        if include_holder_arm:
+            arm_mask = create_beam_stop_holder_shadow(
+                shape=shape,
+                arm_angle_rad=arm_angle_rad,
+                arm_width=arm_width,
+                offset_y=beam_stop_offset[0],
+                offset_x=beam_stop_offset[1],
+            )
+            mask &= arm_mask
 
     if include_module_gaps:
         gaps_mask = create_module_gaps(shape=shape, gap_width=gap_width)

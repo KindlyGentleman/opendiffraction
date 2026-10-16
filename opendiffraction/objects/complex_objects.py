@@ -35,29 +35,21 @@ PhaseType = Literal[
 
 
 def generate_phase_field(
-    phase_type: PhaseType = "random_smooth",
+    phase_type: str = "random_smooth",
     size: int = 64,
     max_phase_depth: float = np.pi,
     rng: np.random.Generator | None = None,
+    max_phase: float | None = None,
 ) -> np.ndarray:
-    """Generate a 2D phase field phi(x, y) in radians.
+    """Generate a 2D phase field phi(x, y) in radians."""
+    if max_phase is not None:
+        max_phase_depth = max_phase
 
-    Parameters
-    ----------
-    phase_type : PhaseType
-        'constant', 'smooth_gradient', 'piecewise_constant', 'random_smooth', 'optical_vortex'.
-    size : int
-        Grid size (default 64).
-    max_phase_depth : float
-        Peak-to-valley phase modulation depth in radians (default pi).
-    rng : np.random.Generator or None
-        Random generator for reproducibility.
+    if phase_type == "smooth":
+        phase_type = "random_smooth"
+    elif phase_type == "vortex":
+        phase_type = "optical_vortex"
 
-    Returns
-    -------
-    phi : np.ndarray
-        Float32 phase array of shape (size, size).
-    """
     if rng is None:
         rng = np.random.default_rng()
 

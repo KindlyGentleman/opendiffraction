@@ -1,0 +1,14 @@
+# OpenDiffraction 2.0 - Scenario S2: Synchrotron Pink-Beam CDI
+name: synchrotron
+scenario_id: S2
+facility: Synchrotron Storage Ring
+nominal_photon_energy_kev: 12.0
+detector_pixel_pitch_um: 75.0
+sample_detector_distance_m: 2.0
+num_samples: 1200
+profiles: ["V04", "V06", "V10", "V14", "V20", "V26", "V35"]
+output_dir: output_synchrotron
+random_seed: 42
+compression: gzip
+compression_level: 4
+export_cxi: true
