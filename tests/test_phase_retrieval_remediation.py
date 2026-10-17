@@ -69,9 +69,8 @@ def test_hio_reconstructs_with_central_beamstop_unconstrained() -> None:
     hio_unconstrained, _ = hybrid_input_output(
         masked_amp, supp, valid_mask=v_mask, num_iterations=80, beta=0.8, rng=rng
     )
-    init_phase = np.angle(np.fft.fft2(np.fft.ifftshift(hio_unconstrained)))
     er_unconstrained, _ = error_reduction(
-        masked_amp, supp, valid_mask=v_mask, num_iterations=40, initial_phase=init_phase, rng=rng
+        masked_amp, supp, valid_mask=v_mask, num_iterations=40, initial_object=hio_unconstrained, rng=rng
     )
     crop_unconstrained = er_unconstrained[256 - 32 : 256 + 32, 256 - 32 : 256 + 32]
     crop_unconstrained_norm = crop_unconstrained / (np.max(crop_unconstrained) + 1e-12)
@@ -83,9 +82,8 @@ def test_hio_reconstructs_with_central_beamstop_unconstrained() -> None:
     hio_zero, _ = hybrid_input_output(
         masked_amp, supp, valid_mask=None, num_iterations=80, beta=0.8, rng=rng
     )
-    init_phase_zero = np.angle(np.fft.fft2(np.fft.ifftshift(hio_zero)))
     er_zero, _ = error_reduction(
-        masked_amp, supp, valid_mask=None, num_iterations=40, initial_phase=init_phase_zero, rng=rng
+        masked_amp, supp, valid_mask=None, num_iterations=40, initial_object=hio_zero, rng=rng
     )
     crop_zero = er_zero[256 - 32 : 256 + 32, 256 - 32 : 256 + 32]
     crop_zero_norm = crop_zero / (np.max(crop_zero) + 1e-12)

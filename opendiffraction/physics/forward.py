@@ -83,7 +83,7 @@ def pad_object_to_detector(
     detector_size: tuple[int, int] = (512, 512),
     offset: tuple[float, float] = (0.0, 0.0),
 ) -> np.ndarray:
-    """Place object at the center of the detector frame with optional sub-pixel shift.
+    """Place object at the center of the detector frame with optional beam displacement.
 
     Parameters
     ----------
@@ -92,51 +92,33 @@ def pad_object_to_detector(
     detector_size : tuple[int, int]
         Detector frame dimensions (DetH, DetW).
     offset : tuple[float, float]
-        Center displacement (dy, dx) in pixels.
+        Beam displacement (dy, dx) in pixels, applied via illumination wavevector tilt
+        so that the diffraction pattern on the detector shifts by (dy, dx).
 
     Returns
     -------
     frame : np.ndarray
-        Padded frame matching detector_size with object centered.
+        Padded frame matching detector_size with object centered and wavevector tilted.
     """
     ny_det, nx_det = detector_size
     ny_obj, nx_obj = obj.shape[-2:]
 
-    # Center placement
+    # Place object strictly centered in detector frame
     y0 = (ny_det - ny_obj) // 2
     x0 = (nx_det - nx_obj) // 2
 
-    # Integer part of displacement
-    dy_int, dx_int = int(round(offset[0])), int(round(offset[1]))
-    y0_adj = y0 + dy_int
-    x0_adj = x0 + dx_int
+    frame = np.zeros(detector_size, dtype=np.complex128 if np.iscomplexobj(obj) else np.float64)
+    frame[y0 : y0 + ny_obj, x0 : x0 + nx_obj] = obj
 
-    frame = np.zeros(detector_size, dtype=obj.dtype)
-    sy0 = max(0, y0_adj)
-    sy1 = min(ny_det, y0_adj + ny_obj)
-    sx0 = max(0, x0_adj)
-    sx1 = min(nx_det, x0_adj + nx_obj)
-
-    oy0 = max(0, -y0_adj)
-    oy1 = oy0 + (sy1 - sy0)
-    ox0 = max(0, -x0_adj)
-    ox1 = ox0 + (sx1 - sx0)
-
-    if sy1 > sy0 and sx1 > sx0:
-        frame[sy0:sy1, sx0:sx1] = obj[oy0:oy1, ox0:ox1]
-
-    # Sub-pixel shift via Fourier phase ramp if subpixel residue exists
-    rem_y = offset[0] - dy_int
-    rem_x = offset[1] - dx_int
-    if abs(rem_y) > 1e-4 or abs(rem_x) > 1e-4:
-        ky = np.fft.fftfreq(ny_det)
-        kx = np.fft.fftfreq(nx_det)
-        kyy, kxx = np.meshgrid(ky, kx, indexing="ij")
-        phase_ramp = np.exp(-2j * np.pi * (kyy * rem_y + kxx * rem_x))
-        F_frame = np.fft.fft2(frame)
-        frame = np.fft.ifft2(F_frame * phase_ramp)
-        if np.isrealobj(obj):
-            frame = np.real(frame)
+    # Apply beam displacement via linear phase ramp (wavevector tilt)
+    # so the far-field diffraction pattern is translated by (dy, dx) on the detector.
+    dy, dx = float(offset[0]), float(offset[1])
+    if abs(dy) > 1e-5 or abs(dx) > 1e-5:
+        y_grid, x_grid = np.mgrid[:ny_det, :nx_det]
+        y_c = y_grid - (ny_det // 2)
+        x_c = x_grid - (nx_det // 2)
+        phase_ramp = np.exp(1j * 2.0 * np.pi * (dy * y_c / ny_det + dx * x_c / nx_det))
+        frame = (frame * phase_ramp).astype(np.complex128)
 
     return frame
 
@@ -224,6 +206,7 @@ def simulate_forward_model(
         from .models.transmission import generate_probe
 
         defocus_waves = float(metadata.get("defocus_waves", 0.0))
+        spherical_aberration_waves = float(metadata.get("spherical_aberration_waves", 0.0))
         astigmatism_waves = float(metadata.get("astigmatism_waves", 0.0))
         astigmatism_angle = float(metadata.get("astigmatism_angle", 0.0))
         coma_waves = float(metadata.get("coma_waves", 0.0))
@@ -234,6 +217,7 @@ def simulate_forward_model(
             size=object_density.shape[0],
             fwhm=probe_fwhm,
             defocus_rad=defocus_waves * 2.0 * np.pi,
+            spherical_aberration_rad=spherical_aberration_waves * 2.0 * np.pi,
             astigmatism_rad=astigmatism_waves * 2.0 * np.pi,
             astigmatism_angle=astigmatism_angle,
             coma_rad=coma_waves * 2.0 * np.pi,

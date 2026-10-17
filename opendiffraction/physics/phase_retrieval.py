@@ -14,6 +14,7 @@ def error_reduction(
     valid_mask: np.ndarray | None = None,
     num_iterations: int = 50,
     initial_phase: np.ndarray | None = None,
+    initial_object: np.ndarray | None = None,
     rng: np.random.Generator | None = None,
     is_complex: bool = False,
 ) -> tuple[np.ndarray, list[float]]:
@@ -33,6 +34,8 @@ def error_reduction(
         Number of iterations.
     initial_phase : np.ndarray or None
         Initial phase in radians. If None, randomized uniformly in [-pi, pi].
+    initial_object : np.ndarray or None
+        Direct real-space object initialization (centered) from prior iterates (e.g. HIO).
     rng : np.random.Generator or None
         Random generator for initial phase.
     is_complex : bool
@@ -54,16 +57,19 @@ def error_reduction(
     else:
         v_mask = np.ones_like(modulus, dtype=bool)
 
-    if initial_phase is None:
-        initial_phase = rng.uniform(-np.pi, np.pi, size=measured_amplitude.shape)
-
-    curr_phase = np.fft.ifftshift(initial_phase)
-    # Inside valid mask use measured modulus, outside use non-zero initial estimate
-    init_modulus = np.where(v_mask, modulus, np.maximum(modulus, 1.0))
-    curr_field = init_modulus * np.exp(1j * curr_phase)
-    curr_obj = np.fft.ifft2(curr_field)
-    if not is_complex:
-        curr_obj = np.real(curr_obj)
+    if initial_object is not None:
+        curr_obj = np.fft.ifftshift(initial_object)
+        if not is_complex:
+            curr_obj = np.maximum(np.real(curr_obj), 0.0)
+    else:
+        if initial_phase is None:
+            initial_phase = rng.uniform(-np.pi, np.pi, size=measured_amplitude.shape)
+        curr_phase = np.fft.ifftshift(initial_phase)
+        init_modulus = np.where(v_mask, modulus, np.maximum(modulus, 1.0))
+        curr_field = init_modulus * np.exp(1j * curr_phase)
+        curr_obj = np.fft.ifft2(curr_field)
+        if not is_complex:
+            curr_obj = np.real(curr_obj)
 
     supp = np.fft.ifftshift(support_mask.astype(bool))
     errors: list[float] = []

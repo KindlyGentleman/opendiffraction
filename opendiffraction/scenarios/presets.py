@@ -181,3 +181,100 @@ def sample_scenario_config(
         cfg.include_module_gaps = True
 
     return cfg, meta
+
+
+HC_KEV_M: float = 1.239841984e-9  # Planck constant * speed of light in m * keV
+
+PROFILE_TO_DEFAULT_SCENARIO: dict[str, str] = {
+    # Group 1: Real-World Specimens
+    "V01": "S1",
+    "V02": "S1",
+    "V03": "S1",
+    "V04": "S3",
+    "V05": "S3",
+    "V06": "S2",
+    "V07": "S3",
+    "V08": "S3",
+    "V09": "S3",
+    "V10": "S2",
+    "V11": "S3",
+    "V12": "S3",
+    # Group 2: Illumination and Coherence
+    "V13": "S5",
+    "V14": "S2",
+    "V15": "S2",
+    "V16": "S1",
+    "V17": "S2",
+    "V18": "S2",
+    "V19": "S1",
+    "V20": "S2",
+    # Group 3: Detector Realism
+    "V21": "S5",
+    "V22": "S1",
+    "V23": "S3",
+    "V24": "S6",
+    "V25": "S2",
+    "V26": "S2",
+    "V27": "S6",
+    "V28": "S6",
+    "V29": "S6",
+    "V30": "S6",
+    # Group 4: Background and Scattering
+    "V31": "S3",
+    "V32": "S2",
+    "V33": "S4",
+    "V34": "S1",
+    "V35": "S2",
+    "V36": "S6",
+    # Group 5: Acquisition and Hit Finding
+    "V37": "S1",
+    "V38": "S1",
+    "V39": "S1",
+    "V40": "S1",
+    "V41": "S1",
+    "V42": "S1",
+    # Group 6: Advanced Physics and Out-of-Distribution
+    "V43": "S4",
+    "V44": "S2",
+    "V45": "S5",
+    "V46": "S2",
+    "V47": "S2",
+    "V48": "S1",
+}
+
+
+def get_scenario_for_profile(profile_id: str) -> ScenarioSpec:
+    """Retrieve matching ScenarioSpec for a given variation profile."""
+    scenario_id = PROFILE_TO_DEFAULT_SCENARIO.get(profile_id, "S1")
+    return SCENARIOS[scenario_id]
+
+
+def get_scenario_physics(
+    scenario_id_or_profile_id: str,
+    meta: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Derive physical wavelength, pixel pitch, and detector distance."""
+    if scenario_id_or_profile_id in SCENARIOS:
+        spec = SCENARIOS[scenario_id_or_profile_id]
+    else:
+        spec = get_scenario_for_profile(scenario_id_or_profile_id)
+
+    meta = meta or {}
+    energy_kev = float(meta.get("photon_energy_kev", spec.nominal_photon_energy_kev))
+    wavelength_m = float(meta.get("wavelength_m", HC_KEV_M / max(energy_kev, 1e-9)))
+    pixel_pitch_m = float(meta.get("pixel_pitch_m", spec.detector_pixel_pitch_um * 1e-6))
+    detector_dist_m = float(
+        meta.get(
+            "detector_distance_m",
+            meta.get("fresnel_propagation_distance_m", spec.sample_detector_distance_m),
+        )
+    )
+
+    return {
+        "scenario_id": spec.scenario_id,
+        "scenario_name": spec.name,
+        "photon_energy_kev": energy_kev,
+        "wavelength_m": wavelength_m,
+        "pixel_pitch_m": pixel_pitch_m,
+        "detector_distance_m": detector_dist_m,
+    }

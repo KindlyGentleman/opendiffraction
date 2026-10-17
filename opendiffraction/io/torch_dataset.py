@@ -86,16 +86,26 @@ class OpenDiffractionTorchDataset(Dataset):
 
     def _load_index(self) -> None:
         """Load and filter sample records from manifest_path, metadata.csv, or data directory."""
-        target_csv = (
-            self.manifest_path
-            if (self.manifest_path and os.path.exists(self.manifest_path))
-            else self.metadata_csv
-        )
-        if os.path.exists(target_csv):
-            with open(target_csv, "r", encoding="utf-8") as f:
+        meta_by_id: dict[str, dict[str, Any]] = {}
+        if os.path.exists(self.metadata_csv):
+            with open(self.metadata_csv, "r", encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    sid = r.get("sample_id")
+                    if sid:
+                        meta_by_id[sid] = r
+
+        if self.manifest_path and os.path.exists(self.manifest_path):
+            with open(self.manifest_path, "r", encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    sid = r.get("sample_id")
+                    if not r.get("shard_name") and sid in meta_by_id:
+                        r = dict(meta_by_id[sid], **r)
+                    self.records.append(r)
+        elif os.path.exists(self.metadata_csv):
+            with open(self.metadata_csv, "r", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for r in reader:
-                    if self.manifest_path is None and self.split is not None and r.get("split") != self.split:
+                    if self.split is not None and r.get("split") != self.split:
                         continue
                     if self.family is not None and r.get("object_family") != self.family:
                         continue
@@ -121,6 +131,20 @@ class OpenDiffractionTorchDataset(Dataset):
                             "split": sp,
                         }
                     )
+        self._sample_id_to_idx = {
+            r.get("sample_id"): i for i, r in enumerate(self.records) if r.get("sample_id")
+        }
+
+    def get_by_sample_id(self, sample_id: str) -> Any:
+        """Retrieve a specific sample by unique sample_id."""
+        if not hasattr(self, "_sample_id_to_idx") or self._sample_id_to_idx is None:
+            self._sample_id_to_idx = {
+                r.get("sample_id"): i for i, r in enumerate(self.records) if r.get("sample_id")
+            }
+        idx = self._sample_id_to_idx.get(sample_id)
+        if idx is None:
+            raise KeyError(f"Sample ID '{sample_id}' not found in dataset manifest or index.")
+        return self[idx]
 
     def _get_file_handle(self, shard_path: str) -> h5py.File:
         """Safely retrieve or open an HDF5 file handle for the current worker process."""

@@ -12,19 +12,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed & Remediated
 - **OD-001 (Forward Physics Dispatcher)**: Implemented `simulate_forward_model` in `opendiffraction/physics/forward.py`, routing simulation tasks dynamically to physical forward models F1 through F6 according to profile metadata.
 - **OD-002 (Information Leakage Elimination)**: Separated detector readouts into `intensity_raw` (unmasked signed readouts) and `intensity_observed` (strictly masked observation where `observed[~valid_mask] == 0.0`). Guaranteed zero unmasked pixel leakage into model inputs.
-- **OD-003 (Fresnel ASM Centering Bug)**: Eliminated spurious real-space `fftshift` in `fresnel.py`, restoring exact analytical $z=0$ identity ($\|U(z=0) - U_0\|_\infty < 10^{-14}$) and eliminating half-frame diagonal displacement.
-- **OD-004 (Target Integrity & Silent Fallback Removal)**: Removed deceptive `clean_arr = inp_arr` fallback in `torch_dataset.py` and `loader.py`. Supervised tasks now require clean targets or explicit `self_supervised=True`. Separated physical ground truth ($O \cdot \sqrt{s}$) from DPR neural network scaling ($O \cdot s$).
-- **OD-005 (Phase Retrieval Baseline Rebuild)**: Repaired HIO and ER iterative phase retrieval in `phase_retrieval.py` to leave unmeasured Fourier pixels unconstrained rather than forcing them to zero. Standardized real-space twin-image registration and scale-invariant target normalization, restoring benchmark SSIM from 0.018 to 0.391 across noisy, masked datasets.
-- **OD-006 (Spurious Detector Holder Arm)**: Removed arbitrary `acq_idx == 2` mask overrides in `pipeline.py`; detector hardware geometry is now strictly profile- and scenario-driven.
-- **OD-007 (Manifest Physics Metadata)**: Synchronized wavelength, pixel pitch, and propagation distance in generated manifests with active scenario presets and profile parameters.
-- **OD-008 (Bounded-Memory Incremental Streaming)**: Implemented `IncrementalShardWriter` in `storage.py`, pre-allocating HDF5 datasets and streaming samples to disk individually. Peak generation process RAM reduced from $>2.4$ GB to $<120$ MB.
-- **OD-009 (Resume Safety & Fingerprinting)**: Added deterministic SHA-256 configuration fingerprinting stored in HDF5 root attributes; resume logic now validates configuration compatibility before appending.
-- **OD-010 (Profile Sample Planning)**: Dynamically bound total sample counts in `sample_profile_48` to actual planned specimen counts rather than hardcoding `total=1000`.
+- **OD-003 (Target Integrity & Silent Fallback Removal)**: Removed deceptive `clean_arr = inp_arr` fallback in `torch_dataset.py` and `loader.py`. Supervised tasks now require clean targets or explicit `self_supervised=True`.
+- **OD-004 (Compact Schema Contract)**: Formalized compact vs extended storage contracts, ensuring clean ground-truth intensities are stored in extended shards.
+- **OD-005 (Manifest Identity Enforcement)**: Added `manifest_path` support and `get_by_sample_id` indexing to `OpenDiffractionDataset` and `OpenDiffractionTorchDataset`, ensuring benchmark evaluators match exact sample identities.
+- **OD-006 (Fresnel ASM Centering Bug)**: Eliminated spurious real-space `fftshift` in `fresnel.py`, restoring exact analytical $z=0$ identity ($\|U(z=0) - U_0\|_\infty < 10^{-14}$) and eliminating half-frame diagonal displacement.
+- **OD-007 (Beam Displacement Semantics)**: Applied illumination wavevector tilt phase ramp in `pad_object_to_detector`, overcoming Fourier shift invariance and shifting far-field diffraction peaks on the detector frame.
+- **OD-008 (Profile Aberrations Execution)**: Added spherical aberration ($W \propto r^4$) parameter `spherical_aberration_rad` to `generate_probe` and connected metadata in `forward.py` for profile V17.
+- **OD-009 (Background Scattering Connection)**: Connected background halos, slit flare, and cosmic ray spikes to production forward pipeline.
+- **OD-010 (F6 Euler Orientation)**: Cached 3D volume across acquisition shots and applied Euler orientation rotations before projection.
+- **OD-011 (Physical Geometry Metadata)**: Synchronized wavelength, pixel pitch, photon energy, and detector distance dynamically from active `ScenarioSpec` S1-S6.
+- **OD-012 (DPR Scaling Contract)**: Separated DPR flux-scaled target ($O \cdot s$) from physical ground truth amplitude ($O$).
+- **OD-013 (HIO-to-ER Coordinate Transfer)**: Implemented direct real-space object state transfer into `error_reduction`, eliminating uncentered Fourier phase coordinate scrambling.
+- **OD-014 (Masked Fourier Unconstrained)**: Left unmeasured Fourier pixels unconstrained during modulus updates, preventing artificial beamstop edge ringing.
+- **OD-015 (Crystallographic R-Factor)**: Implemented standard crystallographic amplitude R-factor evaluated strictly over valid pixels.
+- **OD-016 (Windowed SSIM Implementation)**: Implemented standard local windowed SSIM in `metrics.py` using 11x11 sliding window filter.
+- **OD-017 (Diagnostic Pearson Correlation)**: Replaced trivial target vs clipped target correlation with true Pearson correlation between aligned reconstruction and ground truth in `eval_phase_retrieval.py`.
+- **OD-018 (HIO Support Regimes)**: Implemented explicit support constraint regimes (disc, bounding box, oracle ground truth dilation, autocorrelation estimation) in `benchmarks/phase_retrieval.py`.
+- **OD-019 (Severe Mask Policy)**: Removed silent mask reset (`mask[:] = True`) on severe defect patterns, preserving extreme detector masks.
+- **OD-020 (Quick Preset Profile Coverage)**: Configured `acquisitions_per_object = 1` for quick preset, ensuring 100% coverage of profiles V01-V48 in smoke tests.
+- **OD-021 (Bounded-Memory Incremental Streaming)**: Implemented `IncrementalShardWriter` in `storage.py`, pre-allocating HDF5 datasets and streaming samples to disk individually. Peak generation process RAM reduced to $<120$ MB.
+- **OD-022 (Resume Safety & Fingerprinting)**: Added deterministic SHA-256 configuration fingerprinting stored in HDF5 root attributes; resume logic validates configuration compatibility before appending.
+- **OD-023 (Hit Finding Class Balance)**: Added balanced stratified manifest generation for Task 4 (Hit Finding) with $3\sigma$ readout noise floor gating.
+- **OD-024 (Localized Region Metrics)**: Inpainting benchmark evaluators compute Masked Region MAE and RMSE strictly over missing pixels.
+- **OD-025 (Preset Consistency)**: Harmonized sample counts and versions across CLI, YAML configs, and documentation.
+- **OD-026 (Release Version Consistency)**: Centralized v3.1.0 in `version.py`.
+- **OD-027 (CI Test Suite Coverage)**: Updated GitHub Actions workflow `.github/workflows/tests.yml` to run full test suite across `tests/`.
+- **OD-028 (Physics Oracles Verification)**: Validated 5 independent mathematical oracles (Airy disk, Parseval energy conservation, Friedel symmetry, Fresnel identity).
+- **OD-029 (Truthful Task Scope)**: Clarified T1-T4 benchmarked tasks vs T5-T12 roadmap manifests.
+- **OD-030 (CXI Scope Disclosure)**: Disclosed synthetic format compatibility testing versus facility beamtime data.
 
 ### Added
 - **Multi-Acquisition Object Invariance**: Preserved unscaled base object identity across all 4 acquisition shots across all 48 profiles, including V47 3D particle Euler projections.
-- **Balanced Hit Finding Benchmark Protocol**: Added balanced stratified manifest generation for Task 4 (Hit Finding) with $3\sigma$ readout noise floor gating.
-- **Unified 107-Test Regression Suite**: 100% automated test pass rate across physical forward models, detector masking, storage contracts, and deterministic replay.
+- **Sub-Pixel Twin Image Alignment**: Added sub-pixel cross-correlation registration in `align_twin_and_translation` using matrix-multiplication DFT (`skimage.registration.phase_cross_correlation`).
+- **Unified 117-Test Regression Suite**: 100% automated test pass rate across physical forward models, detector masking, storage contracts, and deterministic replay.
 
 ---
 

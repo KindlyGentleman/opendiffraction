@@ -21,21 +21,33 @@ def align_twin_and_translation(
     best_corr = -float("inf")
     best_shift = (0.0, 0.0)
 
-    for cand in candidates:
-        # Cross correlation via FFT
-        F_cand = np.fft.fft2(cand)
-        F_gt = np.fft.fft2(ground_truth)
-        xcorr = np.fft.ifft2(F_cand * np.conj(F_gt)).real
-        max_idx = np.unravel_index(np.argmax(xcorr), xcorr.shape)
+    try:
+        from skimage.registration import phase_cross_correlation
 
-        sh_y = max_idx[0] if max_idx[0] < cand.shape[0] // 2 else max_idx[0] - cand.shape[0]
-        sh_x = max_idx[1] if max_idx[1] < cand.shape[1] // 2 else max_idx[1] - cand.shape[1]
+        for cand in candidates:
+            sh, _, _ = phase_cross_correlation(ground_truth, cand, upsample_factor=10)
+            al = shift(cand, shift=sh, mode="wrap", order=1)
+            corr_val = float(np.sum(al * ground_truth))
+            if corr_val > best_corr:
+                best_corr = corr_val
+                best_candidate = cand
+                best_shift = tuple(sh)
+    except ImportError:
+        for cand in candidates:
+            # Cross correlation via FFT
+            F_cand = np.fft.fft2(cand)
+            F_gt = np.fft.fft2(ground_truth)
+            xcorr = np.fft.ifft2(F_cand * np.conj(F_gt)).real
+            max_idx = np.unravel_index(np.argmax(xcorr), xcorr.shape)
 
-        corr_val = xcorr[max_idx]
-        if corr_val > best_corr:
-            best_corr = corr_val
-            best_candidate = cand
-            best_shift = (-sh_y, -sh_x)
+            sh_y = max_idx[0] if max_idx[0] < cand.shape[0] // 2 else max_idx[0] - cand.shape[0]
+            sh_x = max_idx[1] if max_idx[1] < cand.shape[1] // 2 else max_idx[1] - cand.shape[1]
+
+            corr_val = xcorr[max_idx]
+            if corr_val > best_corr:
+                best_corr = corr_val
+                best_candidate = cand
+                best_shift = (-sh_y, -sh_x)
 
     aligned = shift(best_candidate, shift=best_shift, mode="wrap", order=1)
     return aligned.astype(np.float32)
@@ -47,20 +59,64 @@ def aligned_mse(reconstructed: np.ndarray, ground_truth: np.ndarray) -> float:
     return float(np.mean((aligned - ground_truth) ** 2))
 
 
-def ssim_2d(img1: np.ndarray, img2: np.ndarray, data_range: float = 1.0, k1: float = 0.01, k2: float = 0.03) -> float:
-    """Compute 2D Structural Similarity Index (SSIM)."""
+def ssim_2d(
+    img1: np.ndarray,
+    img2: np.ndarray,
+    data_range: float = 1.0,
+    k1: float = 0.01,
+    k2: float = 0.03,
+    win_size: int = 11,
+) -> float:
+    """Compute standard 2D Structural Similarity Index (SSIM).
+
+    Uses skimage.metrics.structural_similarity when scikit-image is available,
+    with a fallback to standard 11x11 local sliding window filter (Wang et al., 2004).
+    """
+    try:
+        from skimage.metrics import structural_similarity
+
+        w = min(win_size, min(img1.shape))
+        if w % 2 == 0:
+            w -= 1
+        return float(
+            structural_similarity(
+                img1.astype(np.float64),
+                img2.astype(np.float64),
+                data_range=float(data_range),
+                win_size=max(w, 3),
+            )
+        )
+    except ImportError:
+        pass
+
+    from scipy.ndimage import uniform_filter
+
     c1 = (k1 * data_range) ** 2
     c2 = (k2 * data_range) ** 2
 
-    mu1 = float(np.mean(img1))
-    mu2 = float(np.mean(img2))
-    var1 = float(np.var(img1))
-    var2 = float(np.var(img2))
-    cov = float(np.mean((img1 - mu1) * (img2 - mu2)))
+    w = min(win_size, min(img1.shape))
+    if w % 2 == 0:
+        w -= 1
+    w = max(w, 3)
 
-    num = (2 * mu1 * mu2 + c1) * (2 * cov + c2)
-    den = (mu1**2 + mu2**2 + c1) * (var1 + var2 + c2)
-    return float(num / (den + 1e-12))
+    a1 = img1.astype(np.float64)
+    a2 = img2.astype(np.float64)
+
+    mu1 = uniform_filter(a1, size=w)
+    mu2 = uniform_filter(a2, size=w)
+
+    mu1_sq = mu1 * mu1
+    mu2_sq = mu2 * mu2
+    mu1_mu2 = mu1 * mu2
+
+    sigma1_sq = uniform_filter(a1 * a1, size=w) - mu1_sq
+    sigma2_sq = uniform_filter(a2 * a2, size=w) - mu2_sq
+    sigma12 = uniform_filter(a1 * a2, size=w) - mu1_mu2
+
+    num = (2.0 * mu1_mu2 + c1) * (2.0 * sigma12 + c2)
+    den = (mu1_sq + mu2_sq + c1) * (sigma1_sq + sigma2_sq + c2)
+    ssim_map = num / (den + 1e-12)
+    return float(np.mean(ssim_map))
 
 
 def aligned_ssim(reconstructed: np.ndarray, ground_truth: np.ndarray) -> float:
