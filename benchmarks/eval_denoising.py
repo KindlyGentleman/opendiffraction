@@ -33,7 +33,9 @@ def run_denoising_benchmark(
     if num_samples is not None and len(df_val) > num_samples:
         df_val = df_val.head(num_samples)
 
-    ds = OpenDiffractionTorchDataset(dataset_dir, split="valid", task="denoising", return_dict=True)
+    ds = OpenDiffractionTorchDataset(
+        dataset_dir, split=None, task="denoising", return_dict=True, manifest_path=manifest_path
+    )
 
     psnr_list = []
     ssim_list = []

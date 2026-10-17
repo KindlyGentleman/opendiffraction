@@ -78,11 +78,10 @@ def simulate_fresnel_diffraction(
     F_out = F_in * H
     propagated_field = np.fft.ifft2(F_out)
 
-    # Shift DC to center for detector convention
-    field_centered = np.fft.fftshift(propagated_field)
-    intensity = np.maximum(np.real(field_centered * np.conj(field_centered)), 0.0).astype(np.float32)
+    # Propagated field is in real space matching input coordinate origin
+    intensity = np.maximum(np.real(propagated_field * np.conj(propagated_field)), 0.0).astype(np.float32)
 
-    return field_centered, intensity
+    return propagated_field, intensity
 
 
 def simulate_fresnel_nearfield(

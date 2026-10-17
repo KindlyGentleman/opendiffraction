@@ -23,6 +23,183 @@ def compute_file_sha256(filepath: str) -> str:
     return h.hexdigest()
 
 
+def compute_config_fingerprint(config_dict: dict[str, Any]) -> str:
+    """Compute a deterministic SHA-256 fingerprint for dataset generation configurations."""
+    serialized = json.dumps(config_dict, sort_keys=True, default=str)
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+class IncrementalShardWriter:
+    """Streams individual samples incrementally to a temporary HDF5 file with bounded memory."""
+
+    def __init__(
+        self,
+        shard_path: str,
+        total_samples: int,
+        storage_mode: str = "extended",
+        compression: str = "gzip",
+        compression_opts: int = 4,
+        config_fingerprint: str = "",
+        has_phase: bool = False,
+    ) -> None:
+        self.shard_path = shard_path
+        self.tmp_path = shard_path + ".tmp"
+        self.total_samples = total_samples
+        self.storage_mode = storage_mode
+        self.config_fingerprint = config_fingerprint
+        self.has_phase = has_phase
+
+        if os.path.exists(self.tmp_path):
+            try:
+                os.remove(self.tmp_path)
+            except OSError:
+                pass
+
+        comp = None if compression in (None, "none") else compression
+        comp_opts = None if comp is None else compression_opts
+
+        self.file = h5py.File(self.tmp_path, "w")
+        N = total_samples
+
+        # Root attributes for resume and verification integrity
+        self.file.attrs["generator_version"] = GENERATOR_VERSION
+        self.file.attrs["schema_version"] = SCHEMA_VERSION
+        self.file.attrs["storage_mode"] = storage_mode
+        self.file.attrs["config_fingerprint"] = config_fingerprint
+        self.file.attrs["num_samples"] = total_samples
+
+        # Standard training datasets (always present)
+        self.ds_input = self.file.create_dataset(
+            "input",
+            shape=(N, 1, 512, 512),
+            dtype=np.float32,
+            chunks=(1, 1, 512, 512),
+            compression=comp,
+            compression_opts=comp_opts,
+        )
+        self.ds_target = self.file.create_dataset(
+            "target",
+            shape=(N, 1, 64, 64),
+            dtype=np.float32,
+            chunks=(1, 1, 64, 64),
+            compression=comp,
+            compression_opts=comp_opts,
+        )
+        self.ds_mask = self.file.create_dataset(
+            "mask",
+            shape=(N, 1, 512, 512),
+            dtype=bool,
+            chunks=(1, 1, 512, 512),
+            compression=comp,
+            compression_opts=comp_opts,
+        )
+
+        if self.storage_mode == "extended":
+            self.ds_obj_amp = self.file.create_dataset(
+                "object_amplitude",
+                shape=(N, 1, 64, 64),
+                dtype=np.float32,
+                chunks=(1, 1, 64, 64),
+                compression=comp,
+                compression_opts=comp_opts,
+            )
+            self.ds_tgt_phys = self.file.create_dataset(
+                "target_physical",
+                shape=(N, 1, 64, 64),
+                dtype=np.float32,
+                chunks=(1, 1, 64, 64),
+                compression=comp,
+                compression_opts=comp_opts,
+            )
+            self.ds_inten_ideal = self.file.create_dataset(
+                "intensity_ideal",
+                shape=(N, 1, 512, 512),
+                dtype=np.float32,
+                chunks=(1, 1, 512, 512),
+                compression=comp,
+                compression_opts=comp_opts,
+            )
+            self.ds_inten_exp = self.file.create_dataset(
+                "intensity_expected",
+                shape=(N, 1, 512, 512),
+                dtype=np.float32,
+                chunks=(1, 1, 512, 512),
+                compression=comp,
+                compression_opts=comp_opts,
+            )
+            self.ds_inten_meas = self.file.create_dataset(
+                "intensity_measured",
+                shape=(N, 1, 512, 512),
+                dtype=np.float32,
+                chunks=(1, 1, 512, 512),
+                compression=comp,
+                compression_opts=comp_opts,
+            )
+            self.ds_inten_obs = self.file.create_dataset(
+                "intensity_observed",
+                shape=(N, 1, 512, 512),
+                dtype=np.float32,
+                chunks=(1, 1, 512, 512),
+                compression=comp,
+                compression_opts=comp_opts,
+            )
+            self.ds_inten_raw = self.file.create_dataset(
+                "intensity_raw",
+                shape=(N, 1, 512, 512),
+                dtype=np.float32,
+                chunks=(1, 1, 512, 512),
+                compression=comp,
+                compression_opts=comp_opts,
+            )
+            self.ds_valid_mask = self.file.create_dataset(
+                "valid_mask",
+                shape=(N, 1, 512, 512),
+                dtype=bool,
+                chunks=(1, 1, 512, 512),
+                compression=comp,
+                compression_opts=comp_opts,
+            )
+            if self.has_phase:
+                self.ds_phase = self.file.create_dataset(
+                    "object_phase",
+                    shape=(N, 1, 64, 64),
+                    dtype=np.float32,
+                    chunks=(1, 1, 64, 64),
+                    compression=comp,
+                    compression_opts=comp_opts,
+                )
+
+    def write_sample(self, row_idx: int, s: dict[str, Any]) -> None:
+        """Write single sample at row_idx into pre-allocated HDF5 datasets."""
+        observed = s.get("intensity_observed", s.get("intensity_measured"))
+        raw = s.get("intensity_raw", observed)
+        target = s["target_dpr"]
+        mask = s["valid_mask"]
+
+        self.ds_input[row_idx, 0] = observed
+        self.ds_target[row_idx, 0] = target
+        self.ds_mask[row_idx, 0] = mask
+
+        if self.storage_mode == "extended":
+            self.ds_obj_amp[row_idx, 0] = s["object_amplitude"]
+            self.ds_tgt_phys[row_idx, 0] = s.get("target_physical", target)
+            self.ds_inten_ideal[row_idx, 0] = s.get("intensity_ideal", observed)
+            self.ds_inten_exp[row_idx, 0] = s.get("intensity_expected", observed)
+            self.ds_inten_obs[row_idx, 0] = observed
+            self.ds_inten_raw[row_idx, 0] = raw
+            self.ds_inten_meas[row_idx, 0] = observed
+            self.ds_valid_mask[row_idx, 0] = mask
+
+            if self.has_phase and s.get("object_phase") is not None:
+                self.ds_phase[row_idx, 0] = s["object_phase"]
+
+    def finalize(self) -> str:
+        """Close HDF5 handle and commit temporary file atomically."""
+        self.file.close()
+        os.replace(self.tmp_path, self.shard_path)
+        return compute_file_sha256(self.shard_path)
+
+
 class DatasetWriter:
     """Manages compressed HDF5 shards and metadata manifests with atomic write semantics."""
 
@@ -78,8 +255,13 @@ class DatasetWriter:
             )
         os.replace(temp_file, self.progress_file)
 
-    def verify_shard(self, shard_path: str, expected_count: int) -> bool:
-        """Verify that an HDF5 shard exists, is uncorrupted, and has expected record count."""
+    def verify_shard(
+        self,
+        shard_path: str,
+        expected_count: int,
+        expected_config_hash: str | None = None,
+    ) -> bool:
+        """Verify that an HDF5 shard exists, is uncorrupted, and has expected record count and config hash."""
         if not os.path.exists(shard_path):
             return False
         try:
@@ -91,6 +273,10 @@ class DatasetWriter:
                 if self.storage_mode == "extended":
                     if "object_amplitude" not in f or "intensity_measured" not in f:
                         return False
+                if expected_config_hash is not None:
+                    stored_hash = f.attrs.get("config_fingerprint", "")
+                    if stored_hash and stored_hash != expected_config_hash:
+                        return False
                 # Try reading first and last slice to verify dataset readability
                 _ = f["input"][0]
                 _ = f["input"][-1]
@@ -98,143 +284,48 @@ class DatasetWriter:
         except Exception:
             return False
 
+    def create_incremental_shard_writer(
+        self,
+        shard_path: str,
+        total_samples: int,
+        config_fingerprint: str = "",
+        has_phase: bool = False,
+    ) -> IncrementalShardWriter:
+        """Create an IncrementalShardWriter instance configured with writer settings."""
+        return IncrementalShardWriter(
+            shard_path=shard_path,
+            total_samples=total_samples,
+            storage_mode=self.storage_mode,
+            compression=self.compression,
+            compression_opts=self.compression_opts,
+            config_fingerprint=config_fingerprint,
+            has_phase=has_phase,
+        )
+
     def write_shard_atomic(
         self,
         shard_path: str,
         samples: list[dict[str, Any]],
+        config_fingerprint: str = "",
     ) -> str:
         """Write a batch of samples to an HDF5 shard atomically.
 
-        Uses temporary file and atomic replace only after successful completion.
+        Uses IncrementalShardWriter with atomic replace after successful completion.
         Returns SHA-256 checksum of the written shard.
         """
         N = len(samples)
         if N == 0:
             return ""
-
-        tmp_path = shard_path + ".tmp"
-        if os.path.exists(tmp_path):
-            try:
-                os.remove(tmp_path)
-            except OSError:
-                pass
-
-        # Select compression parameters
-        comp = None if self.compression in (None, "none") else self.compression
-        comp_opts = None if comp is None else self.compression_opts
-
-        with h5py.File(tmp_path, "w") as f:
-            # Standard training datasets (always present)
-            ds_input = f.create_dataset(
-                "input",
-                shape=(N, 1, 512, 512),
-                dtype=np.float32,
-                chunks=(1, 1, 512, 512),
-                compression=comp,
-                compression_opts=comp_opts,
-            )
-            ds_target = f.create_dataset(
-                "target",
-                shape=(N, 1, 64, 64),
-                dtype=np.float32,
-                chunks=(1, 1, 64, 64),
-                compression=comp,
-                compression_opts=comp_opts,
-            )
-            ds_mask = f.create_dataset(
-                "mask",
-                shape=(N, 1, 512, 512),
-                dtype=bool,
-                chunks=(1, 1, 512, 512),
-                compression=comp,
-                compression_opts=comp_opts,
-            )
-
-            # Extended scientific datasets
-            has_phase = any(s.get("object_phase") is not None for s in samples)
-            if self.storage_mode == "extended":
-                ds_obj_amp = f.create_dataset(
-                    "object_amplitude",
-                    shape=(N, 1, 64, 64),
-                    dtype=np.float32,
-                    chunks=(1, 1, 64, 64),
-                    compression=comp,
-                    compression_opts=comp_opts,
-                )
-                ds_tgt_phys = f.create_dataset(
-                    "target_physical",
-                    shape=(N, 1, 64, 64),
-                    dtype=np.float32,
-                    chunks=(1, 1, 64, 64),
-                    compression=comp,
-                    compression_opts=comp_opts,
-                )
-                ds_inten_ideal = f.create_dataset(
-                    "intensity_ideal",
-                    shape=(N, 1, 512, 512),
-                    dtype=np.float32,
-                    chunks=(1, 1, 512, 512),
-                    compression=comp,
-                    compression_opts=comp_opts,
-                )
-                ds_inten_exp = f.create_dataset(
-                    "intensity_expected",
-                    shape=(N, 1, 512, 512),
-                    dtype=np.float32,
-                    chunks=(1, 1, 512, 512),
-                    compression=comp,
-                    compression_opts=comp_opts,
-                )
-                ds_inten_meas = f.create_dataset(
-                    "intensity_measured",
-                    shape=(N, 1, 512, 512),
-                    dtype=np.float32,
-                    chunks=(1, 1, 512, 512),
-                    compression=comp,
-                    compression_opts=comp_opts,
-                )
-                ds_valid_mask = f.create_dataset(
-                    "valid_mask",
-                    shape=(N, 1, 512, 512),
-                    dtype=bool,
-                    chunks=(1, 1, 512, 512),
-                    compression=comp,
-                    compression_opts=comp_opts,
-                )
-                if has_phase:
-                    ds_phase = f.create_dataset(
-                        "object_phase",
-                        shape=(N, 1, 64, 64),
-                        dtype=np.float32,
-                        chunks=(1, 1, 64, 64),
-                        compression=comp,
-                        compression_opts=comp_opts,
-                    )
-
-            # Populate datasets
-            for i, s in enumerate(samples):
-                meas = s["intensity_measured"]
-                target = s["target_dpr"]
-                mask = s["valid_mask"]
-
-                ds_input[i, 0] = meas
-                ds_target[i, 0] = target
-                ds_mask[i, 0] = mask
-
-                if self.storage_mode == "extended":
-                    ds_obj_amp[i, 0] = s["object_amplitude"]
-                    ds_tgt_phys[i, 0] = s.get("target_physical", s["target_dpr"])
-                    ds_inten_ideal[i, 0] = s["intensity_ideal"]
-                    ds_inten_exp[i, 0] = s["intensity_expected"]
-                    ds_inten_meas[i, 0] = meas
-                    ds_valid_mask[i, 0] = mask
-
-                    if has_phase and s.get("object_phase") is not None:
-                        ds_phase[i, 0] = s["object_phase"]
-
-        # Atomic commit
-        os.replace(tmp_path, shard_path)
-        return compute_file_sha256(shard_path)
+        has_phase = any(s.get("object_phase") is not None for s in samples)
+        inc_writer = self.create_incremental_shard_writer(
+            shard_path,
+            total_samples=N,
+            config_fingerprint=config_fingerprint,
+            has_phase=has_phase,
+        )
+        for i, s in enumerate(samples):
+            inc_writer.write_sample(i, s)
+        return inc_writer.finalize()
 
     def append_manifest_rows(self, rows: list[dict[str, Any]]) -> None:
         """Append metadata records to metadata.csv without duplicating existing sample_id records."""

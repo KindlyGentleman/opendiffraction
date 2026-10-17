@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.0] - 2026-10-17
+
+### Fixed & Remediated
+- **OD-001 (Forward Physics Dispatcher)**: Implemented `simulate_forward_model` in `opendiffraction/physics/forward.py`, routing simulation tasks dynamically to physical forward models F1 through F6 according to profile metadata.
+- **OD-002 (Information Leakage Elimination)**: Separated detector readouts into `intensity_raw` (unmasked signed readouts) and `intensity_observed` (strictly masked observation where `observed[~valid_mask] == 0.0`). Guaranteed zero unmasked pixel leakage into model inputs.
+- **OD-003 (Fresnel ASM Centering Bug)**: Eliminated spurious real-space `fftshift` in `fresnel.py`, restoring exact analytical $z=0$ identity ($\|U(z=0) - U_0\|_\infty < 10^{-14}$) and eliminating half-frame diagonal displacement.
+- **OD-004 (Target Integrity & Silent Fallback Removal)**: Removed deceptive `clean_arr = inp_arr` fallback in `torch_dataset.py` and `loader.py`. Supervised tasks now require clean targets or explicit `self_supervised=True`. Separated physical ground truth ($O \cdot \sqrt{s}$) from DPR neural network scaling ($O \cdot s$).
+- **OD-005 (Phase Retrieval Baseline Rebuild)**: Repaired HIO and ER iterative phase retrieval in `phase_retrieval.py` to leave unmeasured Fourier pixels unconstrained rather than forcing them to zero. Standardized real-space twin-image registration and scale-invariant target normalization, restoring benchmark SSIM from 0.018 to 0.391 across noisy, masked datasets.
+- **OD-006 (Spurious Detector Holder Arm)**: Removed arbitrary `acq_idx == 2` mask overrides in `pipeline.py`; detector hardware geometry is now strictly profile- and scenario-driven.
+- **OD-007 (Manifest Physics Metadata)**: Synchronized wavelength, pixel pitch, and propagation distance in generated manifests with active scenario presets and profile parameters.
+- **OD-008 (Bounded-Memory Incremental Streaming)**: Implemented `IncrementalShardWriter` in `storage.py`, pre-allocating HDF5 datasets and streaming samples to disk individually. Peak generation process RAM reduced from $>2.4$ GB to $<120$ MB.
+- **OD-009 (Resume Safety & Fingerprinting)**: Added deterministic SHA-256 configuration fingerprinting stored in HDF5 root attributes; resume logic now validates configuration compatibility before appending.
+- **OD-010 (Profile Sample Planning)**: Dynamically bound total sample counts in `sample_profile_48` to actual planned specimen counts rather than hardcoding `total=1000`.
+
+### Added
+- **Multi-Acquisition Object Invariance**: Preserved unscaled base object identity across all 4 acquisition shots across all 48 profiles, including V47 3D particle Euler projections.
+- **Balanced Hit Finding Benchmark Protocol**: Added balanced stratified manifest generation for Task 4 (Hit Finding) with $3\sigma$ readout noise floor gating.
+- **Unified 107-Test Regression Suite**: 100% automated test pass rate across physical forward models, detector masking, storage contracts, and deterministic replay.
+
+---
+
 ## [3.0.0] - 2026-10-16
 
 ### Added

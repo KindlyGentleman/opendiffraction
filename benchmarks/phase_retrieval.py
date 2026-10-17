@@ -11,6 +11,7 @@ def evaluate_phase_retrieval(
     measured_intensity: np.ndarray,
     ground_truth_object: np.ndarray,
     support_mask: np.ndarray | None = None,
+    valid_mask: np.ndarray | None = None,
     num_hio_iters: int = 40,
     num_er_iters: int = 20,
     beta: float = 0.8,
@@ -26,6 +27,8 @@ def evaluate_phase_retrieval(
         True transmission density (64, 64).
     support_mask : np.ndarray or None
         Real-space support constraint. If None, uses centered disc.
+    valid_mask : np.ndarray or None
+        Valid pixel detector mask.
     num_hio_iters : int
         Iterations of Hybrid Input-Output.
     num_er_iters : int
@@ -47,22 +50,24 @@ def evaluate_phase_retrieval(
         ny, nx = measured_intensity.shape
         cy, cx = ny // 2, nx // 2
         y, x = np.ogrid[:ny, :nx]
-        support_mask = (y - cy)**2 + (x - cx)**2 <= 22.0**2
+        support_mask = (y - cy) ** 2 + (x - cx) ** 2 <= 28.0**2
 
-    # Step 1: HIO exploration
+    # Step 1: HIO exploration with mask-aware Fourier constraint
     hio_recon, _ = hybrid_input_output(
         modulus,
         support_mask,
+        valid_mask=valid_mask,
         num_iterations=num_hio_iters,
         beta=beta,
         rng=rng,
     )
 
-    # Step 2: ER refinement
+    # Step 2: ER refinement with mask-aware Fourier constraint
     initial_phase = np.angle(np.fft.fft2(np.fft.ifftshift(hio_recon)))
     er_recon, er_errors = error_reduction(
         modulus,
         support_mask,
+        valid_mask=valid_mask,
         num_iterations=num_er_iters,
         initial_phase=initial_phase,
         rng=rng,
@@ -72,12 +77,19 @@ def evaluate_phase_retrieval(
     ny, nx = er_recon.shape
     cy, cx = ny // 2, nx // 2
     cropped = er_recon[cy - 32 : cy + 32, cx - 32 : cx + 32]
-    p_max = np.max(cropped)
+    p_max = float(np.max(cropped))
     if p_max > 0:
-        cropped = cropped / p_max
+        cropped = (cropped / p_max).astype(np.float32)
 
-    ssim_val = aligned_ssim(cropped, ground_truth_object)
-    mse_val = aligned_mse(cropped, ground_truth_object)
+    # Scale-invariant normalization of ground-truth target
+    gt_max = float(np.max(ground_truth_object))
+    if gt_max > 0:
+        gt_norm = (ground_truth_object / gt_max).astype(np.float32)
+    else:
+        gt_norm = ground_truth_object.astype(np.float32)
+
+    ssim_val = aligned_ssim(cropped, gt_norm)
+    mse_val = aligned_mse(cropped, gt_norm)
     r_factor = er_errors[-1] if er_errors else 0.0
 
     return {

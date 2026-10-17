@@ -114,16 +114,18 @@ def test_10_clean_friedel_symmetry():
 
 
 def test_11_masking_preserves_unmasked_measurement():
-    """Test 11: Verify masking does not alter the underlying unmasked measurement."""
+    """Test 11: Verify masking preserves unmasked raw measurement while masking observed measurement."""
     rng = np.random.default_rng(202)
     obj, _ = generate_procedural_object("porous_heterogeneous", "binary", size=64, rng=rng)
     cfg = SimulationConfig(include_beam_stop=True, include_module_gaps=True)
     sim = simulate_diffraction(obj, cfg, rng=rng)
 
-    # Measured intensity must have values under the beam stop (unmasked detector readout)
+    # Raw intensity must have values under the beam stop (unmasked detector readout)
     beamstop_pixels = ~sim.valid_mask
     assert np.any(beamstop_pixels)
-    # The stored intensity_measured has non-zero noise readouts under the beam stop
-    assert np.any(sim.intensity_measured[beamstop_pixels] != 0.0)
-    # But observed_masked has exactly 0 under the mask
+    # The stored intensity_raw has non-zero noise readouts under the beam stop
+    assert np.any(sim.intensity_raw[beamstop_pixels] != 0.0)
+    # But intensity_observed and intensity_measured have exactly 0 under the mask
+    assert np.all(sim.intensity_observed[beamstop_pixels] == 0.0)
+    assert np.all(sim.intensity_measured[beamstop_pixels] == 0.0)
     assert np.all(sim.observed_masked[beamstop_pixels] == 0.0)

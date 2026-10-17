@@ -35,7 +35,9 @@ def run_phase_retrieval_benchmark(
     if num_samples is not None and len(df_val) > num_samples:
         df_val = df_val.head(num_samples)
 
-    ds = OpenDiffractionTorchDataset(dataset_dir, split="valid", task="phase_retrieval", return_dict=True)
+    ds = OpenDiffractionTorchDataset(
+        dataset_dir, split=None, task="phase_retrieval", return_dict=True, manifest_path=manifest_path
+    )
 
     ssim_list = []
     mse_list = []
@@ -52,6 +54,7 @@ def run_phase_retrieval_benchmark(
         res = evaluate_phase_retrieval(
             measured_intensity=inp,
             ground_truth_object=target,
+            valid_mask=mask,
             num_hio_iters=num_hio_iters,
             num_er_iters=num_er_iters,
             seed=seed + idx,

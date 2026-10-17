@@ -118,7 +118,12 @@ TASK_DEFINITIONS: dict[str, dict[str, Any]] = {
 }
 
 
-def build_task_manifest(df: pd.DataFrame, task_id: str) -> pd.DataFrame:
+def build_task_manifest(
+    df: pd.DataFrame,
+    task_id: str,
+    balance_classes: bool = False,
+    seed: int = 42,
+) -> pd.DataFrame:
     """Filter and construct sample manifest for a given task ID."""
     if task_id not in TASK_DEFINITIONS:
         raise ValueError(f"Unknown task: {task_id}. Choose T1 to T12.")
@@ -134,13 +139,22 @@ def build_task_manifest(df: pd.DataFrame, task_id: str) -> pd.DataFrame:
         # Denoising & inpainting
         manifest = df[df["split"].isin(["train", "valid", "test"])].copy()
     elif task_id == "T4":
-        # Hit finding: Group 5 profiles (V37-V42) or samples with hit_status
-        if "hit_status" in df.columns and df["hit_status"].notna().any():
-            manifest = df[df["hit_status"].notna()].copy()
-        elif prof_col is not None:
+        # Hit finding: prioritize Group 5 profiles (V37-V42) specifically designed for hit finding
+        if prof_col is not None and df[prof_col].isin(["V37", "V38", "V39", "V40", "V41", "V42"]).any():
             manifest = df[df[prof_col].isin(["V37", "V38", "V39", "V40", "V41", "V42"])].copy()
+        elif "hit_status" in df.columns and df["hit_status"].notna().any():
+            manifest = df[df["hit_status"].notna()].copy()
         else:
             manifest = df.copy()
+
+        if balance_classes and "hit_status" in manifest.columns:
+            counts = manifest["hit_status"].value_counts()
+            min_count = int(counts.min())
+            balanced_dfs = []
+            for cls_name in sorted(counts.index):
+                sub = manifest[manifest["hit_status"] == cls_name]
+                balanced_dfs.append(sub.sample(n=min_count, random_state=seed))
+            manifest = pd.concat(balanced_dfs, ignore_index=True)
     elif task_id == "T5":
         # Defect segmentation: profiles with module gaps, dead pixels, or cosmic rays
         if prof_col is not None:

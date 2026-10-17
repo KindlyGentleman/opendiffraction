@@ -1,0 +1,159 @@
+[
+  {
+    "id": "OD-001",
+    "severity": "P0",
+    "category": "physics_dispatch",
+    "affected_files": [
+      "opendiffraction/generator/pipeline.py"
+    ],
+    "reproduction_procedure": "Inspect pipeline.py:182-222. Variable fwd_model is read from meta, but line 222 calls simulate_diffraction unconditionally. F3, F4, F5, F6 models in models/ are never called in generation.",
+    "expected_behavior": "When profile defines forward_model in {F1..F6}, simulate_forward_model must route execution to the respective model implementation.",
+    "actual_behavior": "All profiles execute standard Fraunhofer diffraction (simulate_diffraction), leaving forward_model as metadata only.",
+    "scientific_consequences": "Synthetic observations labeled as Fresnel near-field, aberrated probe, polychromatic, or 3D particles are identical to conventional Fraunhofer diffraction.",
+    "proposed_remedy": "Implement simulate_forward_model dispatcher in physics/forward.py and invoke it from simulate_single_task.",
+    "required_regression_test": "tests/test_forward_dispatcher_remediation.py::test_forward_model_dispatch_f1_to_f6",
+    "verification_status": "VERIFIED"
+  },
+  {
+    "id": "OD-002",
+    "severity": "P0",
+    "category": "detector_masking_leakage",
+    "affected_files": [
+      "opendiffraction/physics/forward.py",
+      "opendiffraction/generator/pipeline.py",
+      "opendiffraction/generator/storage.py",
+      "opendiffraction/io/loader.py",
+      "opendiffraction/io/torch_dataset.py"
+    ],
+    "reproduction_procedure": "Inspect forward.py:240-249. observed_masked is computed as intensity_measured * mask, but returned and stored field is unmasked intensity_measured. Learning models see pixels behind beamstops and gaps.",
+    "expected_behavior": "Inaccessible detector regions (beamstop, module gaps, dead pixels) must contain 0 in observed input array intensity_observed, while unmasked detector readout is stored separately as intensity_raw.",
+    "actual_behavior": "intensity_measured contains non-zero unmasked simulated intensity behind beamstops and detector gaps.",
+    "scientific_consequences": "Severe information leakage: inverse solvers and neural networks trained on this dataset receive true diffraction signals in physically inaccessible regions.",
+    "proposed_remedy": "Standardize fields: intensity_raw (full detector readout before mask) and intensity_observed (masked with exact zeros outside valid_mask). Add backward compatibility alias.",
+    "required_regression_test": "tests/test_mask_leakage_remediation.py::test_observed_pixels_strictly_zero_outside_mask",
+    "verification_status": "VERIFIED"
+  },
+  {
+    "id": "OD-003",
+    "severity": "P0",
+    "category": "fresnel_propagation",
+    "affected_files": [
+      "opendiffraction/physics/models/fresnel.py"
+    ],
+    "reproduction_procedure": "Run simulate_fresnel_diffraction with propagation_distance_m=0.0. Inspect output field: fftshift is erroneously applied to propagated real-space field.",
+    "expected_behavior": "At z = 0, propagated field should be identical to input_field (within numerical float precision).",
+    "actual_behavior": "At z = 0, real-space object is translated by (N/2, N/2) due to spurious fftshift on real-space field after ifft2.",
+    "scientific_consequences": "Fresnel model inverts coordinate space and breaks boundary conditions and spatial alignment.",
+    "proposed_remedy": "Remove erroneous fftshift on spatial field in fresnel.py, verify band-limited ASM cutoff, and test zero-distance identity.",
+    "required_regression_test": "tests/test_fresnel_remediation.py::test_fresnel_zero_distance_identity",
+    "verification_status": "VERIFIED"
+  },
+  {
+    "id": "OD-004",
+    "severity": "P0",
+    "category": "hdf5_target_integrity",
+    "affected_files": [
+      "opendiffraction/io/torch_dataset.py",
+      "opendiffraction/generator/storage.py"
+    ],
+    "reproduction_procedure": "Inspect torch_dataset.py:176-188. When intensity_expected is absent from compact shard, fallback code sets clean_arr = inp_arr and returns noisy measurement as target.",
+    "expected_behavior": "Loaders must raise descriptive KeyError or ValueError when a required supervised ground-truth target is missing, unless explicitly configured for self-supervised mode.",
+    "actual_behavior": "Silently substitutes noisy measurement as its own clean target in denoising and inpainting tasks.",
+    "scientific_consequences": "Models train to predict noise as clean signal; benchmark evaluations measure identity reproduction instead of true restoration.",
+    "proposed_remedy": "Raise explicit error when clean target is requested but absent; provide deterministic target generation or companion target shards.",
+    "required_regression_test": "tests/test_storage_targets_remediation.py::test_missing_clean_target_raises_error_in_torch_dataset",
+    "verification_status": "VERIFIED"
+  },
+  {
+    "id": "OD-005",
+    "severity": "P0",
+    "category": "phase_retrieval_baseline",
+    "affected_files": [
+      "opendiffraction/physics/phase_retrieval.py",
+      "benchmarks/eval_phase_retrieval.py"
+    ],
+    "reproduction_procedure": "Inspect phase_retrieval.py:58-62. HIO and ER algorithms replace all Fourier amplitudes with measured modulus, including zeroed masked pixels. Fourier residual formula computes squared error divided by sum of squares.",
+    "expected_behavior": "Masked/inaccessible Fourier pixels must remain unconstrained or updated iteratively. Classical R-factor must be sum(|G| - |F|) / sum(|F|) over valid pixels.",
+    "actual_behavior": "Algorithms force Fourier modulus to 0 at masked pixels, creating severe non-physical artifacts. Reported R-factor is normalized squared error.",
+    "scientific_consequences": "Classical baseline performance drops artificially to SSIM ~ 0.0128, leading to false claims about classical CDI failure.",
+    "proposed_remedy": "Implement mask-aware Fourier projection, align reconstructions (translation, twin image, phase) before evaluation, and report true R-factor.",
+    "required_regression_test": "tests/test_phase_retrieval_remediation.py::test_hio_reconstructs_noise_free_phantom",
+    "verification_status": "VERIFIED"
+  },
+  {
+    "id": "OD-006",
+    "severity": "P1",
+    "category": "pipeline_consistency",
+    "affected_files": [
+      "opendiffraction/generator/pipeline.py"
+    ],
+    "reproduction_procedure": "Inspect pipeline.py:225. A holder arm with random orientation is injected whenever acq_idx == 2, even if profile does not specify holder arm.",
+    "expected_behavior": "Detector geometry and masks must be driven deterministically by profile metadata and configuration.",
+    "actual_behavior": "Spurious holder arm added to acquisition index 2 without metadata documentation.",
+    "scientific_consequences": "Acquisition variation is confounded with undocumented detector geometry changes.",
+    "proposed_remedy": "Decouple holder arm injection from acquisition index and make it strictly profile-driven.",
+    "required_regression_test": "tests/test_mask_leakage_remediation.py::test_holder_arm_strictly_profile_driven",
+    "verification_status": "VERIFIED"
+  },
+  {
+    "id": "OD-007",
+    "severity": "P1",
+    "category": "manifest_consistency",
+    "affected_files": [
+      "opendiffraction/generator/pipeline.py"
+    ],
+    "reproduction_procedure": "Inspect pipeline.py:276-278. Wavelength, pixel pitch, and distance are hardcoded constants (1.24e-10, 7.5e-5, 0.5) in manifest regardless of scenario.",
+    "expected_behavior": "Manifest records the physical parameters corresponding to the active scenario or profile configuration.",
+    "actual_behavior": "Manifest records fixed constants regardless of scenario S1-S6 or optical vs X-ray regime.",
+    "scientific_consequences": "Users cannot trust metadata for quantitative inverse problem reconstruction or physical scaling.",
+    "proposed_remedy": "Populate manifest parameters directly from the resolved DiffractionConfig.",
+    "required_regression_test": "tests/test_forward_dispatcher_remediation.py::test_pipeline_dispatches_declared_profile_model",
+    "verification_status": "VERIFIED"
+  },
+  {
+    "id": "OD-008",
+    "severity": "P1",
+    "category": "memory_safety",
+    "affected_files": [
+      "opendiffraction/generator/pipeline.py",
+      "opendiffraction/generator/storage.py"
+    ],
+    "reproduction_procedure": "Inspect pipeline.py:383-401. Entire shard of 480 samples (multiple 512x512 arrays per sample) is held in memory before write_shard_atomic is called.",
+    "expected_behavior": "Streaming or chunked incremental writing to bounded temporary file, keeping peak memory under resource threshold.",
+    "actual_behavior": "High peak memory (over 2 GiB per shard) causing out-of-memory risks on memory-constrained systems.",
+    "scientific_consequences": "Crash risk during generation on standard CPU environments.",
+    "proposed_remedy": "Write samples incrementally to chunked HDF5 datasets and finalize atomically.",
+    "required_regression_test": "tests/test_storage_remediation.py::test_incremental_shard_write_bounded_memory",
+    "verification_status": "VERIFIED"
+  },
+  {
+    "id": "OD-009",
+    "severity": "P1",
+    "category": "resume_integrity",
+    "affected_files": [
+      "opendiffraction/generator/storage.py"
+    ],
+    "reproduction_procedure": "Inspect storage.py:81. verify_shard only checks row count and basic keys. It does not check configuration hash, random seed, or file integrity checksum.",
+    "expected_behavior": "Resume validation must verify config hash and dataset integrity before marking shard as complete.",
+    "actual_behavior": "Stale or incompatible shards with identical sample count are reused silently.",
+    "scientific_consequences": "Silent data corruption when resuming with modified parameters or seeds.",
+    "proposed_remedy": "Store configuration fingerprint and per-shard checksum in HDF5 root attributes and check during resume.",
+    "required_regression_test": "tests/test_storage_remediation.py::test_resume_rejects_incompatible_config_hash",
+    "verification_status": "VERIFIED"
+  },
+  {
+    "id": "OD-010",
+    "severity": "P1",
+    "category": "sample_planning",
+    "affected_files": [
+      "opendiffraction/generator/pipeline.py"
+    ],
+    "reproduction_procedure": "Inspect pipeline.py:178. total=1000 is hardcoded in sample_profile_48 call regardless of requested total_samples.",
+    "expected_behavior": "total parameter passed to sample_profile_48 should reflect actual number of base objects planned.",
+    "actual_behavior": "Fixed constant total=1000 passed even for quick or smoke test runs with 48 samples.",
+    "scientific_consequences": "Inconsistent sampling strides across small and large dataset presets.",
+    "proposed_remedy": "Pass actual number of unique base objects derived from task plan.",
+    "required_regression_test": "tests/test_forward_dispatcher_remediation.py::test_pipeline_dispatches_declared_profile_model",
+    "verification_status": "VERIFIED"
+  }
+]
