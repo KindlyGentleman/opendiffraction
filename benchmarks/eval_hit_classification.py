@@ -39,8 +39,17 @@ def run_hit_classification_benchmark(
     y_pred_binary = []
 
     t0 = time.time()
-    for idx in range(min(len(df_val), len(ds))):
-        sample = ds[idx]
+    for idx, row in df_val.iterrows():
+        sid = str(row.get("sample_id", ""))
+        if sid and hasattr(ds, "get_by_sample_id"):
+            try:
+                sample = ds.get_by_sample_id(sid)
+            except KeyError:
+                continue
+        else:
+            if idx >= len(ds):
+                break
+            sample = ds[idx]
         inp = sample["input"][0].numpy()  # (512, 512)
         target_label = sample["target"]  # label string or binary indicator
 

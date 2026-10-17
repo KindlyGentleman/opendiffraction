@@ -1,4 +1,4 @@
-# OpenDiffraction 2.0 - Scenario S1: XFEL Single-Particle Imaging
+# OpenDiffraction 3.1 - Scenario S1: XFEL Single-Particle Imaging
 name: xfel
 scenario_id: S1
 facility: XFEL

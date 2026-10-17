@@ -31,7 +31,7 @@ jobs:
 
     - name: Run scientific unit tests
       run: |
-        python -m pytest tests/test_physics_forward.py tests/test_coherence.py tests/test_noise_statistics.py tests/test_f1_to_f6.py tests/test_profiles_48.py tests/test_cxi.py -v
+        python -m pytest tests/ -v
 
     - name: Run quick generation smoke test
       run: |

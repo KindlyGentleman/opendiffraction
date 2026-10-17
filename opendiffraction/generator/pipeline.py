@@ -22,6 +22,7 @@ from opendiffraction.physics.forward import (
     simulate_diffraction,
 )
 from opendiffraction.physics.masks import composite_detector_mask
+from opendiffraction.scenarios import get_scenario_physics
 from opendiffraction.variations.profiles import PROFILE_SPECS, sample_profile_config
 from opendiffraction.variations.profiles_48 import PROFILES_48, sample_profile_48
 from opendiffraction.version import (
@@ -240,6 +241,8 @@ def simulate_single_task(
         "valid_mask": sim_res.valid_mask,
     }
 
+    scen_phys = get_scenario_physics(task["profile_id"], meta)
+
     manifest_record = {
         "sample_id": task["sample_id"],
         "base_object_id": task["base_object_id"],
@@ -249,6 +252,8 @@ def simulate_single_task(
         "split": task["split"],
         "profile_id": task["profile_id"],
         "variation_family": task["profile_id"],
+        "scenario_id": scen_phys["scenario_id"],
+        "scenario_name": scen_phys["scenario_name"],
         "object_family": fam,
         "density_type": meta.get("density_type", "continuous"),
         "forward_model": fwd_model,
@@ -269,11 +274,10 @@ def simulate_single_task(
         "random_seed": task["acquisition_seed"],
         "object_seed": task["object_seed"],
         "acquisition_seed": task["acquisition_seed"],
-        "wavelength_m": float(meta.get("wavelength_m", 1.24e-10)),
-        "pixel_pitch_m": float(meta.get("pixel_pitch_m", 7.5e-5)),
-        "detector_distance_m": float(
-            meta.get("detector_distance_m", meta.get("fresnel_propagation_distance_m", 0.5))
-        ),
+        "photon_energy_kev": f"{scen_phys['photon_energy_kev']:.3f}",
+        "wavelength_m": float(scen_phys["wavelength_m"]),
+        "pixel_pitch_m": float(scen_phys["pixel_pitch_m"]),
+        "detector_distance_m": float(scen_phys["detector_distance_m"]),
         "ground_truth_available": True,
         "shard_name": task.get("shard_name", "shard_000.h5"),
         "row_index": task.get("row_index", 0),
@@ -338,26 +342,28 @@ def generate_dataset(
         [f for f in os.listdir(data_dir) if f.endswith(".h5")] if os.path.exists(data_dir) else []
     )
 
-    if not resume:
-        if existing_shards and not overwrite:
+    if overwrite:
+        if os.path.exists(data_dir):
+            shutil.rmtree(data_dir)
+        os.makedirs(data_dir, exist_ok=True)
+        if os.path.exists(writer.metadata_csv):
+            os.remove(writer.metadata_csv)
+        if os.path.exists(writer.progress_file):
+            os.remove(writer.progress_file)
+    elif not resume:
+        if existing_shards:
             raise RuntimeError(
                 f"Output directory {output_dir} already contains {len(existing_shards)} data shards. "
                 "Specify resume=True to continue, or overwrite=True to restart cleanly."
             )
-        if overwrite and os.path.exists(data_dir):
-            shutil.rmtree(data_dir)
-            os.makedirs(data_dir, exist_ok=True)
-            if os.path.exists(writer.metadata_csv):
-                os.remove(writer.metadata_csv)
-            if os.path.exists(writer.progress_file):
-                os.remove(writer.progress_file)
 
     # 1. Build immutable master plan
+    acq_per_obj = 1 if (preset == "quick" or total_samples <= 48) else 4
     master_tasks, shards = build_master_task_plan(
         total_samples=total_samples,
         seed=seed,
         profiles_mode=profiles_mode,
-        acquisitions_per_object=4,
+        acquisitions_per_object=acq_per_obj,
         shard_size=shard_size,
     )
 

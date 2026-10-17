@@ -37,13 +37,31 @@ class OpenDiffractionDataset:
         dataset_dir: str,
         split: str | None = None,
         variation: str | None = None,
+        manifest_path: str | None = None,
     ) -> None:
         self.dataset_dir = os.path.abspath(dataset_dir)
         self.data_dir = os.path.join(self.dataset_dir, "data")
         self.metadata_csv = os.path.join(self.dataset_dir, "metadata.csv")
+        self.manifest_path = manifest_path
+
+        # Build sample_id -> metadata mapping if metadata.csv exists
+        self._meta_by_id: dict[str, dict[str, Any]] = {}
+        if os.path.exists(self.metadata_csv):
+            with open(self.metadata_csv, "r", encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    sid = r.get("sample_id")
+                    if sid:
+                        self._meta_by_id[sid] = r
 
         self.records: list[dict[str, Any]] = []
-        if os.path.exists(self.metadata_csv):
+        if self.manifest_path and os.path.exists(self.manifest_path):
+            with open(self.manifest_path, "r", encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    sid = r.get("sample_id")
+                    if not r.get("shard_name") and sid in self._meta_by_id:
+                        r = dict(self._meta_by_id[sid], **r)
+                    self.records.append(r)
+        elif os.path.exists(self.metadata_csv):
             with open(self.metadata_csv, "r", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for r in reader:
@@ -112,3 +130,10 @@ class OpenDiffractionDataset:
             intensity_raw=i_raw,
             intensity_observed=i_obs,
         )
+
+    def get_by_sample_id(self, sample_id: str) -> DiffractionSample:
+        """Retrieve a specific sample by unique sample_id."""
+        for idx, rec in enumerate(self.records):
+            if rec.get("sample_id") == sample_id:
+                return self[idx]
+        raise KeyError(f"Sample ID '{sample_id}' not found in dataset index.")

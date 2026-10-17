@@ -14,6 +14,7 @@ def generate_probe(
     size: int = 64,
     fwhm: float = 30.0,
     defocus_rad: float = 0.0,
+    spherical_aberration_rad: float = 0.0,
     astigmatism_rad: float = 0.0,
     astigmatism_angle: float = 0.0,
     coma_rad: float = 0.0,
@@ -29,6 +30,8 @@ def generate_probe(
         Beam full-width at half-maximum in pixels.
     defocus_rad : float
         Quadratic wavefront phase curvature (radians at margin).
+    spherical_aberration_rad : float
+        Quartic wavefront spherical aberration amplitude (radians at margin).
     astigmatism_rad : float
         Astigmatic phase amplitude.
     astigmatism_angle : float
@@ -54,9 +57,11 @@ def generate_probe(
     sigma = fwhm / (2.0 * np.sqrt(2.0 * np.log(2.0)))
     amp = np.exp(-(r_jit**2) / (2.0 * (sigma**2)))
 
-    # Wavefront aberrations: W(r) = defocus * r^2 + astigmatism * r^2 * cos(2(theta - phi)) + coma * r^3 * cos(theta)
+    # Wavefront aberrations: W(r) = defocus * r^2 + spherical * r^4 + astigmatism * r^2 * cos(2(theta - phi)) + coma * r^3 * cos(theta)
     r_norm = r_jit / (size / 2.0)
     phase = defocus_rad * (r_norm**2)
+    if abs(spherical_aberration_rad) > 1e-5:
+        phase += spherical_aberration_rad * (r_norm**4)
     if abs(astigmatism_rad) > 1e-5:
         phase += astigmatism_rad * (r_norm**2) * np.cos(2 * (theta_jit - astigmatism_angle))
     if abs(coma_rad) > 1e-5:
