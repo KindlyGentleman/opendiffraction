@@ -53,6 +53,8 @@ class OpenDiffractionTorchDataset(Dataset):
         family: str | None = None,
         variation: str | None = None,
         return_dict: bool = False,
+        self_supervised: bool = False,
+        manifest_path: str | None = None,
     ) -> None:
         if not HAS_TORCH:
             raise ImportError(
@@ -69,6 +71,8 @@ class OpenDiffractionTorchDataset(Dataset):
         self.family = family
         self.variation = variation
         self.return_dict = return_dict
+        self.self_supervised = self_supervised
+        self.manifest_path = os.path.abspath(manifest_path) if manifest_path else None
 
         self.data_dir = os.path.join(self.root, "data")
         self.metadata_csv = os.path.join(self.root, "metadata.csv")
@@ -81,12 +85,17 @@ class OpenDiffractionTorchDataset(Dataset):
         self._load_index()
 
     def _load_index(self) -> None:
-        """Load and filter sample records from metadata.csv or data directory."""
-        if os.path.exists(self.metadata_csv):
-            with open(self.metadata_csv, "r", encoding="utf-8") as f:
+        """Load and filter sample records from manifest_path, metadata.csv, or data directory."""
+        target_csv = (
+            self.manifest_path
+            if (self.manifest_path and os.path.exists(self.manifest_path))
+            else self.metadata_csv
+        )
+        if os.path.exists(target_csv):
+            with open(target_csv, "r", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for r in reader:
-                    if self.split is not None and r.get("split") != self.split:
+                    if self.manifest_path is None and self.split is not None and r.get("split") != self.split:
                         continue
                     if self.family is not None and r.get("object_family") != self.family:
                         continue
@@ -177,14 +186,34 @@ class OpenDiffractionTorchDataset(Dataset):
                 clean_arr = h5_file["intensity_expected"][row]
             elif "intensity_ideal" in h5_file:
                 clean_arr = h5_file["intensity_ideal"][row]
-            else:
+            elif self.self_supervised:
                 clean_arr = inp_arr
+            else:
+                raise KeyError(
+                    f"Supervised task '{self.task}' requires clean ground-truth targets "
+                    "('intensity_expected' or 'intensity_ideal'), but shard "
+                    f"'{rec['shard_name']}' was generated without them. "
+                    "Use an extended scientific dataset, companion target shards, or explicitly "
+                    "specify self_supervised=True."
+                )
             task_target_t = torch.from_numpy(clean_arr)
         elif self.task == "inpainting":
             if "intensity_expected" in h5_file:
                 clean_arr = h5_file["intensity_expected"][row]
-            else:
+            elif "intensity_ideal" in h5_file:
+                clean_arr = h5_file["intensity_ideal"][row]
+            elif "intensity_raw" in h5_file:
+                clean_arr = h5_file["intensity_raw"][row]
+            elif self.self_supervised:
                 clean_arr = inp_arr
+            else:
+                raise KeyError(
+                    f"Supervised task '{self.task}' requires unmasked ground-truth targets "
+                    "('intensity_expected', 'intensity_ideal', or 'intensity_raw'), but shard "
+                    f"'{rec['shard_name']}' was generated without them. "
+                    "Use an extended scientific dataset, companion target shards, or explicitly "
+                    "specify self_supervised=True."
+                )
             task_target_t = torch.from_numpy(clean_arr)
         elif self.task == "hit_classification":
             hit_str = rec.get("hit_status", "single_hit")

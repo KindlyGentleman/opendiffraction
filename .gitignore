@@ -33,6 +33,7 @@ output_quick/
 output_full/
 output_v3/
 output_staging/
+data_*/
 kaggle_release/data/
 kaggle_release/*.cxi
 kaggle_release/*.h5

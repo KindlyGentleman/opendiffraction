@@ -1,29 +1,29 @@
 {
   "T1_Phase_Retrieval": {
-    "mean_aligned_ssim": 0.01835421571965756,
-    "std_aligned_ssim": 0.02500664762111473,
-    "mean_aligned_mse": 0.03397834100178443,
-    "mean_final_r_factor": 0.14408081512550786,
+    "mean_aligned_ssim": 0.3913566366783441,
+    "std_aligned_ssim": 0.13118589824272628,
+    "mean_aligned_mse": 0.07974769677966834,
+    "mean_final_r_factor": 0.6079721859560905,
     "evaluated_samples": 20,
-    "wall_time_s": 90.16721439361572,
-    "throughput_sps": 0.22181011284979985
+    "wall_time_s": 95.3636953830719,
+    "throughput_sps": 0.20972341643914755
   },
   "T2_Denoising": {
-    "mean_psnr_db": 55.25794105529785,
-    "std_psnr_db": 8.032300154149825,
-    "mean_ssim": 0.9970193484642514,
-    "mean_r_factor": 0.32168058782815934,
+    "mean_psnr_db": 34.05155456542969,
+    "std_psnr_db": 8.426709222104119,
+    "mean_ssim": 0.9957612537851466,
+    "mean_r_factor": 0.6908726751804352,
     "evaluated_samples": 50,
-    "wall_time_s": 3.814976215362549,
-    "throughput_sps": 13.106241606082556
+    "wall_time_s": 9.7839937210083,
+    "throughput_sps": 5.110387580547956
   },
   "T3_Inpainting": {
-    "mean_masked_region_mae": 754.4997302246094,
-    "mean_overall_psnr_db": 36.78551357269287,
-    "mean_overall_ssim": 0.9955549173483399,
+    "mean_masked_region_mae": 1074.7597647857665,
+    "mean_overall_psnr_db": 36.02315269470215,
+    "mean_overall_ssim": 0.996001311351479,
     "evaluated_samples": 50,
-    "wall_time_s": 2.6338863372802734,
-    "throughput_sps": 18.983355239098714
+    "wall_time_s": 6.759243488311768,
+    "throughput_sps": 7.397277533567344
   },
   "T4_Hit_Classification": {
     "accuracy": 1.0,
@@ -31,9 +31,9 @@
     "precision": 1.0,
     "recall": 1.0,
     "f1_score": 1.0,
-    "evaluated_samples": 140,
-    "wall_time_s": 1.128645896911621,
-    "throughput_sps": 124.0424480194276
+    "evaluated_samples": 16,
+    "wall_time_s": 0.26755690574645996,
+    "throughput_sps": 59.80036267560138
   },
-  "total_suite_time_s": 97.82976055145264
+  "total_suite_time_s": 112.2289388179779
 }

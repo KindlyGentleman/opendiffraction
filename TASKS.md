@@ -1,88 +1,106 @@
-# OpenDiffraction 3.0 Task Management
+# OpenDiffraction Remediation Tasks
 
-## Phase 0: Audit Existing Code and Data
-- [x] Run existing test suite and record baseline results (78 passed, 0 failed, 0 skipped).
-- [x] P0.1: Audit resume implementation and identify interruption vulnerabilities.
-- [x] P0.2: Audit object identity and group data leakage across splits.
-- [x] P0.3: Audit forward physics models, FFT centering, coherence, scaling, and DPR compatibility.
-- [x] P0.4: Audit metadata schemas, configuration fields, and version consistency.
-- [x] Fix critical resume, split, and metadata issues identified in Phase 0.
-- [x] Deliver Phase 0 audit reports:
-  - `reports/V3_BASELINE_AUDIT.md`
-  - `reports/SCIENTIFIC_MODEL_AUDIT.md`
-  - `reports/RESUME_SAFETY_AUDIT.md`
-  - `reports/STORAGE_BASELINE.md`
-- [x] Execute fault-injection resume tests (`scripts/verify_resume.py`: All 3 tests passed).
+Branch: `remediation/v3.1-scientific-audit`
+Target: OpenDiffraction 3.1.0 Scientific Remediation
 
-## Phase 1: Large-Scale Synthetic Dataset Generation (1,000 Target)
-- [x] P1.1: Design dataset identity: 250 base objects x 4 diverse acquisitions = 1,000 observations.
-- [x] P1.2: Verify physical model compatibility for supported profiles (F1 to F6).
-- [x] P1.3: Procedural specimen generation across 15 specimen families with recorded seeds.
-- [x] P1.4: Diffraction acquisition condition matrix (flux, partial coherence, masks, noise, background).
-- [x] P1.5: Group-disjoint deterministic splitting (64.4% train, 14.0% val, 11.6% test, 10.0% test_ood).
-- [x] P1.6: Metadata design with typed fields and documented units.
-- [x] P1.7: Staged generation execution:
-  - [x] Stage A: 48 samples (integration smoke test)
-  - [x] Stage B: 480 samples (statistical and compression benchmarks)
-  - [x] Stage C: 1,000 samples (engineering pilot)
-  - [x] Stage D: 1,000 samples (production dataset in `output_v3/`)
-- [x] Deliverables:
-  - `output_v3/` dataset (7 HDF5 shards, 1,000 records, 0.87 GB)
-  - `reports/GENERATION_METRICS.md`
-  - `reports/OBJECT_CATALOG.md`
-  - `reports/ACQUISITION_MATRIX.md`
+## Prioritized Issue Register
 
-## Phase 2: Optimize Storage, Resume, and PyTorch Loading
-- [x] P2.1: Measure storage baseline on representative subsets.
-- [x] P2.2: Benchmark compression filters (gzip-1, gzip-4, lzf, uncompressed).
-- [x] P2.3: Implement compact training and extended scientific storage modes.
-- [x] P2.4: Optimize HDF5 chunk shape, shard size, atomic writes, and manifest verification.
-- [x] P2.5: Preflight resource protection (memory, disk, workers).
-- [x] P2.6: Refactor dataset loader with lazy loading and stable indexing.
-- [x] P2.7: Implement `OpenDiffractionTorchDataset` with safe per-worker lazy file opening and context management.
-- [x] P2.8: Document and implement scientific normalization transforms.
-- [x] Deliverables:
-  - `opendiffraction/io/torch_dataset.py`
-  - `opendiffraction/generator/storage.py`
-  - `scripts/benchmark_storage.py`
-  - `scripts/verify_resume.py`
-  - `reports/STORAGE_OPTIMIZATION.md`
+| ID | Sev | Phase | Category | Description | Status |
+|---|---|---|---|---|---|
+| OD-001 | P0 | Phase I | physics_dispatch | Production pipeline ignores forward_model and always calls F1 | VERIFIED |
+| OD-002 | P0 | Phase III | masking_leakage | intensity_measured unmasked data leaks into model input | VERIFIED |
+| OD-003 | P0 | Phase I | fresnel_centering | Spurious real-space fftshift in Fresnel ASM breaks z=0 identity | VERIFIED |
+| OD-004 | P0 | Phase IV | hdf5_targets | Silent fallback uses noisy input as clean target in compact mode | VERIFIED |
+| OD-005 | P0 | Phase VI | phase_retrieval | HIO/ER forces masked pixels to zero; metric is squared error | VERIFIED |
+| OD-006 | P1 | Phase II | pipeline_masks | Spurious holder arm forced on acq_idx == 2 | VERIFIED |
+| OD-007 | P1 | Phase II | manifest_physics | Wavelength, pitch, and distance hardcoded regardless of scenario | VERIFIED |
+| OD-008 | P1 | Phase VIII | memory_safety | Shard buffered in RAM before write; exceeds tight RAM limits | VERIFIED |
+| OD-009 | P1 | Phase VIII | resume_safety | verify_shard checks only count; no config hash verification | VERIFIED |
+| OD-010 | P1 | Phase II | sample_planning | Hardcoded total=1000 in sample_profile_48 | VERIFIED |
 
-## Phase 3: Scientific Data Quality and Training-Ready Tasks
-- [x] P3.1: Full structural validation across all 1,000 samples (0 NaN, 0 Inf, zero duplicates).
-- [x] P3.2: Stratified physics validation (Fourier, Parseval, Poisson, coherence, mask integrity).
-- [x] P3.3: Statistical distribution audit.
-- [x] P3.4: Four ML benchmark task manifests (T1 Phase Retrieval, T2 Denoising, T3 Inpainting, T4 Hit Finding).
-- [x] P3.5: Comprehensive dataset card (`reports/V3_DATASET_CARD.md`).
-- [x] Deliverables:
-  - `reports/V3_FULL_DATASET_VALIDATION.md`
-  - `reports/V3_PHYSICS_VALIDATION.md`
-  - `reports/V3_DISTRIBUTION_AUDIT.md`
-  - `reports/V3_DATASET_CARD.md`
-  - `manifests/task_1/` to `manifests/task_4/` (train.csv, val.csv, test.csv, test_ood.csv)
+## Remediation Roadmap and Acceptance Gates
 
-## Phase 4: Minimal Reproducible Benchmark Infrastructure
-- [x] P4.1: Benchmark evaluation API and metric runners.
-- [x] P4.2: Execute baseline algorithms for T1, T2, T3, T4 on CPU.
-- [x] P4.3: PyTorch CPU training smoke test (lightweight ConvNet on CPU, 33.8% loss reduction in 5 epochs).
-- [x] P4.4: Benchmark protocol and reproducibility guidelines.
-- [x] Deliverables:
-  - `benchmarks/eval_phase_retrieval.py`
-  - `benchmarks/eval_denoising.py`
-  - `benchmarks/eval_inpainting.py`
-  - `benchmarks/eval_hit_classification.py`
-  - `benchmarks/run_all_benchmarks.py`
-  - `reports/BASELINE_VALIDATION.md`
-  - `reports/TRAINING_SMOKE_TEST.md`
-  - `reports/BENCHMARK_PROTOCOL.md`
+### Gate 0: Baseline Freeze
+- [x] Record repository baseline state, versions, and test results (83 passed).
+- [x] Create dedicated branch `remediation/v3.1-scientific-audit`.
+- [x] Create `reports/issue_register.json` and `reports/REMEDIATION_BASELINE_AUDIT.md`.
+- Status: **PASS**
 
-## Phase 5: Limited Experimental Data Compatibility
-- [x] P5.1: Experimental source selection from CXIDB (id-62, id-81, id-91, id-164).
-- [x] P5.2: Read-only experimental CXI/HDF5 adapter (`opendiffraction/io/experimental.py`).
-- [x] P5.3: Synthetic-to-real comparison and quantitative domain gap analysis.
-- [x] P5.4: Adapter verification and automated unit testing (`tests/test_experimental_adapter.py`).
-- [x] Deliverables:
-  - `opendiffraction/io/experimental.py`
-  - `reports/EXPERIMENTAL_DATA_CANDIDATES.md`
-  - `reports/SYNTHETIC_REAL_DOMAIN_GAP.md`
-  - `reports/EXPERIMENTAL_ADAPTER_VALIDATION.md`
+### Gate I: Forward-Physics Dispatcher (OD-001, OD-003)
+- [x] Implement `simulate_forward_model` in `opendiffraction/physics/forward.py`.
+- [x] Connect pipeline `simulate_single_task` to `simulate_forward_model`.
+- [x] Fix Fresnel spatial centering in `opendiffraction/physics/models/fresnel.py`.
+- [x] Implement regression tests for F1-F6 models and dispatch in `tests/test_forward_dispatcher_remediation.py`.
+- [x] Deliver `reports/FORWARD_MODEL_REMEDIATION.md`.
+- Status: **PASS**
+
+### Gate III: Detector Masking and Information Leakage (OD-002, OD-006)
+- [x] Standardize modalities: `intensity_raw` (unmasked readout) and `intensity_observed` (masked observation).
+- [x] Enforce `observed[~valid_mask] == 0` strictly across generator and storage.
+- [x] Update loaders and models to consume `intensity_observed`.
+- [x] Fix holder arm generation so it is strictly profile-driven (OD-006).
+- [x] Deliver `reports/DETECTOR_MASK_AND_LEAKAGE_AUDIT.md`.
+- Status: **PASS**
+
+### Gate IV: HDF5 Storage, Targets, and DPR Scaling (OD-004)
+- [x] Define explicit target requirements per task (T1-T12).
+- [x] Remove silent fallback to input in `torch_dataset.py` and `loader.py`; raise clear exception.
+- [x] Validate DPR target scaling ($s \cdot O$ vs $\sqrt{s} \cdot O$) with upstream reference.
+- [x] Deliver `reports/HDF5_SCHEMA_AND_TARGET_AUDIT.md`.
+- Status: **PASS**
+
+### Gate II: Profile Activation (48 Variations & Scenarios S1-S6) (OD-007, OD-010)
+- [x] Audit all 48 profiles to ensure declared effects modulate measurement.
+- [x] Verify S1-S6 scenarios populate correct physical metadata in manifest (OD-007).
+- [x] Fix hardcoded sample size scaling in `pipeline.py` (OD-010).
+- [x] Deliver `reports/PROFILE_ACTIVATION_AND_DIVERSITY_AUDIT.md`.
+- Status: **PASS**
+
+### Gate V: Object Identity, Group Splits, and Replay
+- [x] Verify unscaled base object identity invariant across acquisitions.
+- [x] Verify group-disjoint splits with zero cross-set leakage.
+- [x] Test deterministic replay from manifest seeds.
+- [x] Deliver `reports/GROUP_SPLIT_AND_REPRODUCIBILITY_AUDIT.md`.
+- Status: **PASS**
+
+### Gate VI: Classical Phase Retrieval Baseline (OD-005)
+- [x] Repair HIO and ER mask handling: keep unmeasured pixels unconstrained.
+- [x] Add reconstruction registration (translation, twin image, phase).
+- [x] Standardize crystallographic R-factor metric.
+- [x] Deliver `reports/PHASE_RETRIEVAL_RECONSTRUCTION_AUDIT.md`.
+- Status: **PASS**
+
+### Gate VIII: Engineering Reliability and Memory Safety (OD-008, OD-009)
+- [x] Implement bounded-memory incremental shard writes.
+- [x] Add config hash and integrity verification to resume logic.
+- [x] Execute fault-injection tests (corrupted shard, config mismatch, interruption).
+- [x] Deliver `reports/RESOURCE_AND_RESUME_SAFETY_AUDIT.md`.
+- Status: **PASS**
+
+### Gate VII: Benchmark Revalidation (T1-T12)
+- [x] Re-run baselines for T1 (Phase Retrieval), T2 (Denoising), T3 (Inpainting), T4 (Hit Finding).
+- [x] Generate balanced evaluation set for T4.
+- [x] Complete audit matrix for T5-T12.
+- [x] Deliver `reports/BENCHMARK_PROTOCOL_AND_FAIRNESS_AUDIT.md`.
+- Status: **PASS**
+
+### Gate IX: Regression Test Suite and Packaging
+- [x] Add comprehensive regression tests for OD-001 through OD-010.
+- [x] Verify optional dependencies in `pyproject.toml` and `requirements.txt`.
+- [x] Run complete test suite and verify 100% pass rate.
+- Status: **PASS**
+
+### Gate X: Figure and Visualization Provenance
+- [x] Re-generate scientific figures A-G with verified provenance.
+- [x] Deliver `reports/FIGURE_AND_VISUALIZATION_AUDIT.md`.
+- Status: **PASS**
+
+### Gate XI: Independent Scientific Re-Audit
+- [x] Independent calculation routes and oracles.
+- [x] Deliver `reports/INDEPENDENT_SCIENTIFIC_REAUDIT.md`.
+- Status: **PASS**
+
+### Gate XII: Release Consistency and Documentation
+- [x] Update README, DATASET_CARD, and CHANGELOG to reflect version 3.1.0.
+- [x] Deliver `reports/FINAL_REMEDIATION_REPORT.md` and `reports/PUBLICATION_READINESS.md`.
+- Status: **PASS**

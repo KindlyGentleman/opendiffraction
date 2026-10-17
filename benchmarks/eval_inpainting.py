@@ -33,7 +33,9 @@ def run_inpainting_benchmark(
     if num_samples is not None and len(df_val) > num_samples:
         df_val = df_val.head(num_samples)
 
-    ds = OpenDiffractionTorchDataset(dataset_dir, split="valid", task="inpainting", return_dict=True)
+    ds = OpenDiffractionTorchDataset(
+        dataset_dir, split=None, task="inpainting", return_dict=True, manifest_path=manifest_path
+    )
 
     mae_masked_list = []
     psnr_list = []

@@ -805,10 +805,10 @@ def sample_profile_48(
             float(rng.uniform(0, 2 * np.pi)),
         )
         metadata["euler_angles_rad"] = angles
-        # Use 2D projection as amplitude
-        proj = np.sum(vol, axis=0)
-        p_max = np.max(proj)
-        amplitude = (proj / (p_max + 1e-8)).astype(np.float32)
+        metadata["volume_3d"] = vol
+        from opendiffraction.physics.models.particle_3d import project_volume_to_2d
+
+        amplitude = project_volume_to_2d(vol, angles=angles)
     elif profile_id == "V48":
         amplitude = make_crack_void(64, rng=rng)
         cfg.photon_budget = 1e5

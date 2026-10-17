@@ -39,9 +39,21 @@ def run_all_benchmarks(
     suite_results = {}
     t_start = time.time()
 
+    def _find_manifest(m_dir: str, task_key: str, fallback_sub: str) -> str:
+        candidates = [
+            os.path.join(m_dir, f"{task_key}_balanced_eval.csv"),
+            os.path.join(m_dir, f"{task_key}_manifest.csv"),
+            os.path.join(m_dir, fallback_sub, "val.csv"),
+            os.path.join(m_dir, fallback_sub, "test.csv"),
+        ]
+        for c in candidates:
+            if os.path.exists(c):
+                return c
+        return os.path.join(m_dir, fallback_sub, "val.csv")
+
     # 1. Phase Retrieval
     print("\n[1/4] Running Task 1: Phase Retrieval (HIO/ER)...")
-    pr_manifest = os.path.join(manifests_dir, "task_1", "val.csv")
+    pr_manifest = _find_manifest(manifests_dir, "T1", "task_1")
     suite_results["T1_Phase_Retrieval"] = run_phase_retrieval_benchmark(
         dataset_dir=dataset_dir,
         manifest_path=pr_manifest,
@@ -50,7 +62,7 @@ def run_all_benchmarks(
 
     # 2. Denoising
     print("\n[2/4] Running Task 2: Diffraction Pattern Denoising...")
-    dn_manifest = os.path.join(manifests_dir, "task_2", "val.csv")
+    dn_manifest = _find_manifest(manifests_dir, "T2", "task_2")
     suite_results["T2_Denoising"] = run_denoising_benchmark(
         dataset_dir=dataset_dir,
         manifest_path=dn_manifest,
@@ -59,7 +71,7 @@ def run_all_benchmarks(
 
     # 3. Inpainting
     print("\n[3/4] Running Task 3: Detector Inpainting...")
-    in_manifest = os.path.join(manifests_dir, "task_3", "val.csv")
+    in_manifest = _find_manifest(manifests_dir, "T3", "task_3")
     suite_results["T3_Inpainting"] = run_inpainting_benchmark(
         dataset_dir=dataset_dir,
         manifest_path=in_manifest,
@@ -68,7 +80,7 @@ def run_all_benchmarks(
 
     # 4. Hit Classification
     print("\n[4/4] Running Task 4: Hit Finding and Classification...")
-    hit_manifest = os.path.join(manifests_dir, "task_4", "val.csv")
+    hit_manifest = _find_manifest(manifests_dir, "T4", "task_4")
     suite_results["T4_Hit_Classification"] = run_hit_classification_benchmark(
         dataset_dir=dataset_dir,
         manifest_path=hit_manifest,

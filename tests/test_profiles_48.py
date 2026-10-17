@@ -50,7 +50,7 @@ def test_sample_profile_48_execution(pid):
     assert "forward_model" in meta
 
     # Run forward simulation
-    sim = simulate_diffraction(amplitude, cfg, object_phase=phase, rng=rng)
+    sim = simulate_diffraction(amplitude, cfg, object_phase=phase, rng=rng, metadata=meta)
     assert sim.intensity_measured.shape == (512, 512)
     assert sim.intensity_measured.dtype == np.float32
     assert sim.valid_mask.shape == (512, 512)
