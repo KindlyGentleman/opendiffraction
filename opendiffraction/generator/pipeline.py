@@ -298,7 +298,7 @@ def simulate_single_task(
         "row_index": task.get("row_index", 0),
         "simulation_version": GENERATOR_VERSION,
         "schema_version": SCHEMA_VERSION,
-    }    "model_compatibility": "DPR_and_Standard_CDI",
+        "model_compatibility": "DPR_and_Standard_CDI",
     }
 
     return sample_dict, manifest_record
