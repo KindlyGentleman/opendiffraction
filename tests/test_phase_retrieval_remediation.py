@@ -51,7 +51,7 @@ def test_hio_reconstructs_noise_free_phantom() -> None:
 
 
 def test_hio_reconstructs_with_central_beamstop_unconstrained() -> None:
-    """Unconstrained Fourier projection under central beamstop must dramatically outperform forced zero."""
+    """Unconstrained Fourier projection under central beamstop must preserve unmeasured modes and outperform forced zero."""
     rng = np.random.default_rng(123)
     obj = make_virus_particle(64, rng=rng)
     pad = pad_object_to_detector(obj, (512, 512))
@@ -62,40 +62,80 @@ def test_hio_reconstructs_with_central_beamstop_unconstrained() -> None:
     v_mask = create_centered_beam_stop((512, 512), half_width=16, half_height=16, circular=True)
     masked_amp = amp * v_mask
 
+    # 1. Analytical projection verification:
+    # Verify that unconstrained Fourier update preserves unmeasured iterate pixels
+    # while forced-zero destroys them by setting them to 0.
+    test_field = np.ones((512, 512), dtype=np.complex128) * (1.0 + 2.0j)
+    v_mask_shifted = np.fft.ifftshift(v_mask.astype(bool))
+    modulus_shifted = np.fft.ifftshift(masked_amp)
+
+    # Mask-aware projection preserves iterate on ~v_mask:
+    g_mod_unconstrained = np.where(
+        v_mask_shifted,
+        modulus_shifted * np.exp(1j * np.angle(test_field)),
+        test_field,
+    )
+    assert np.allclose(
+        g_mod_unconstrained[~v_mask_shifted], test_field[~v_mask_shifted]
+    ), "Unconstrained Fourier update must strictly preserve unmeasured iterate pixels"
+
+    # Forced-zero projection overwrites with 0:
+    g_mod_zero = np.where(
+        np.ones_like(v_mask_shifted),
+        modulus_shifted * np.exp(1j * np.angle(test_field)),
+        test_field,
+    )
+    assert np.allclose(
+        g_mod_zero[~v_mask_shifted], 0.0
+    ), "Forced-zero projection must force unmeasured pixels to zero"
+
+    # 2. Controlled HIO + ER reconstruction with paired random initialization:
     supp = np.zeros((512, 512), dtype=bool)
     supp[256 - 32 : 256 + 32, 256 - 32 : 256 + 32] = (obj > 0)
+    init_phase = np.random.default_rng(123).uniform(-np.pi, np.pi, size=(512, 512))
 
-    # 1. Remediated: mask-aware unconstrained Fourier update
+    # A. Remediated: mask-aware unconstrained Fourier update
     hio_unconstrained, _ = hybrid_input_output(
-        masked_amp, supp, valid_mask=v_mask, num_iterations=80, beta=0.8, rng=rng
+        masked_amp, supp, valid_mask=v_mask, num_iterations=80, beta=0.8, initial_phase=init_phase.copy()
     )
-    er_unconstrained, _ = error_reduction(
-        masked_amp, supp, valid_mask=v_mask, num_iterations=40, initial_object=hio_unconstrained, rng=rng
+    er_unconstrained, er_errs_u = error_reduction(
+        masked_amp, supp, valid_mask=v_mask, num_iterations=40, initial_object=hio_unconstrained
     )
     crop_unconstrained = er_unconstrained[256 - 32 : 256 + 32, 256 - 32 : 256 + 32]
     crop_unconstrained_norm = crop_unconstrained / (np.max(crop_unconstrained) + 1e-12)
     gt_norm = obj / (np.max(obj) + 1e-12)
 
     ssim_unconstrained = aligned_ssim(crop_unconstrained_norm, gt_norm)
+    mse_unconstrained = aligned_mse(crop_unconstrained_norm, gt_norm)
 
-    # 2. Old buggy behavior: forcing masked pixels to zero (valid_mask=None)
+    # B. Buggy baseline: forcing masked pixels to zero (valid_mask=None) with identical initial phase
     hio_zero, _ = hybrid_input_output(
-        masked_amp, supp, valid_mask=None, num_iterations=80, beta=0.8, rng=rng
+        masked_amp, supp, valid_mask=None, num_iterations=80, beta=0.8, initial_phase=init_phase.copy()
     )
-    er_zero, _ = error_reduction(
-        masked_amp, supp, valid_mask=None, num_iterations=40, initial_object=hio_zero, rng=rng
+    er_zero, er_errs_z = error_reduction(
+        masked_amp, supp, valid_mask=None, num_iterations=40, initial_object=hio_zero
     )
     crop_zero = er_zero[256 - 32 : 256 + 32, 256 - 32 : 256 + 32]
     crop_zero_norm = crop_zero / (np.max(crop_zero) + 1e-12)
 
     ssim_zero = aligned_ssim(crop_zero_norm, gt_norm)
+    mse_zero = aligned_mse(crop_zero_norm, gt_norm)
 
-    # Unconstrained interpolation must recover low-q frequencies
-    assert ssim_unconstrained > 0.85, f"Unconstrained SSIM was too low: {ssim_unconstrained:.4f}"
-    # Forced-zero should show degradation compared to unconstrained
-    assert ssim_unconstrained > ssim_zero + 0.25, (
-        f"Expected unconstrained ({ssim_unconstrained:.4f}) to strongly outperform "
-        f"forced-zero ({ssim_zero:.4f})"
+    # Unconstrained interpolation must recover low-q frequencies near-perfectly
+    assert ssim_unconstrained > 0.95, f"Unconstrained SSIM was too low: {ssim_unconstrained:.4f}"
+    assert mse_unconstrained < 1e-4, f"Unconstrained MSE was too high: {mse_unconstrained:.4e}"
+
+    # Forced-zero suffers catastrophic low-frequency loss and negative ringing
+    assert ssim_zero < 0.50, f"Forced-zero SSIM was unexpectedly high: {ssim_zero:.4f}"
+    assert mse_zero > 0.05, f"Forced-zero MSE was unexpectedly low: {mse_zero:.4e}"
+
+    # Statistically and physically justified superiority over forced zero:
+    assert ssim_unconstrained > ssim_zero + 0.50, (
+        f"Expected unconstrained ({ssim_unconstrained:.4f}) to outperform "
+        f"forced-zero ({ssim_zero:.4f}) by > 0.50"
+    )
+    assert mse_zero > 100.0 * mse_unconstrained, (
+        f"Expected forced-zero MSE ({mse_zero:.4e}) to be > 100x unconstrained MSE ({mse_unconstrained:.4e})"
     )
 
 
@@ -116,8 +156,9 @@ def test_crystallographic_r_factor_definition() -> None:
 
 
 def test_alignment_resolves_twin_image_and_translation() -> None:
-    """Alignment utility must resolve 180-deg twin image reflection and spatial translation."""
+    """Alignment utility must resolve 180-deg twin image reflection and spatial translation against an oracle."""
     from scipy.ndimage import shift
+    from opendiffraction.tasks.metrics import fourier_shift_2d
 
     rng = np.random.default_rng(999)
     obj = make_virus_particle(64, rng=rng)
@@ -128,10 +169,21 @@ def test_alignment_resolves_twin_image_and_translation() -> None:
     shifted_twin = shift(twin, shift=(3.0, -2.0), mode="wrap", order=1)
     aligned = align_twin_and_translation(shifted_twin, obj_norm)
     ssim_val = ssim_2d(aligned, obj_norm, data_range=1.0)
-    assert ssim_val > 0.99, f"Alignment failed on integer shift: SSIM={ssim_val:.4f}"
+    assert ssim_val > 0.999, f"Alignment failed on integer shift: SSIM={ssim_val:.4f}"
 
-    # 2. Sub-pixel shift: robust recovery
-    sub_shifted_twin = shift(twin, shift=(3.5, -2.5), mode="wrap", order=1)
+    # 2. Sub-pixel shift: compare against independent registration oracle
+    true_shift = (3.5, -2.5)
+    sub_shifted_twin = shift(twin, shift=true_shift, mode="wrap", order=1)
     aligned_sub = align_twin_and_translation(sub_shifted_twin, obj_norm)
     ssim_sub = ssim_2d(aligned_sub, obj_norm, data_range=1.0)
-    assert ssim_sub > 0.85, f"Alignment failed on subpixel shift: SSIM={ssim_sub:.4f}"
+
+    # Independent oracle: unrotate twin and apply known exact inverse translation via Fourier shift
+    unrotated_twin = np.rot90(sub_shifted_twin, 2)
+    oracle_aligned = fourier_shift_2d(unrotated_twin, true_shift[0], true_shift[1])
+    oracle_ssim = ssim_2d(oracle_aligned, obj_norm, data_range=1.0)
+
+    # Must exceed 0.90 requirement and match oracle interpolation bound to within 0.005
+    assert ssim_sub > 0.90, f"Alignment failed on subpixel shift: SSIM={ssim_sub:.4f}"
+    assert abs(ssim_sub - oracle_ssim) < 0.005, (
+        f"Alignment SSIM ({ssim_sub:.4f}) deviated from registration oracle ({oracle_ssim:.4f})"
+    )
