@@ -120,7 +120,8 @@ with h5py.File(shard_path, 'r') as h5f:
     
     # Load first sample and squeeze channel dimensions (C, H, W) -> (H, W)
     idx = 0
-    intensity = np.squeeze(h5f['intensity_measured'][idx])
+    input_key = 'intensity_measured' if 'intensity_measured' in h5f else ('input' if 'input' in h5f else 'intensity')
+    intensity = np.squeeze(h5f[input_key][idx])
     mask = np.squeeze(h5f['mask'][idx])
     target_key = 'target_dpr' if 'target_dpr' in h5f else ('target' if 'target' in h5f else 'object_amplitude')
     gt_object = np.squeeze(h5f[target_key][idx])
