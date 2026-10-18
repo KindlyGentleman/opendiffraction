@@ -36,6 +36,12 @@ def run_hit_classification_benchmark(
 
     print(f"Loading Hit Classification evaluation data from {manifest_path}...")
     df_val = pd.read_csv(manifest_path)
+    if "sample_id" not in df_val.columns:
+        raise ValueError(f"Manifest at {manifest_path} is missing required 'sample_id' column.")
+    if df_val["sample_id"].duplicated().any():
+        dups = df_val[df_val["sample_id"].duplicated()]["sample_id"].tolist()
+        raise ValueError(f"Manifest contains duplicate sample IDs: {dups[:5]}")
+
     if num_samples is not None and len(df_val) > num_samples:
         df_val = df_val.head(num_samples)
 

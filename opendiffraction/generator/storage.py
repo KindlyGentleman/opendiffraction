@@ -223,6 +223,7 @@ class DatasetWriter:
 
         self.progress_file = os.path.join(self.output_dir, "progress.json")
         self.metadata_csv = os.path.join(self.output_dir, "metadata.csv")
+        self.integrity_file = os.path.join(self.output_dir, "shard_integrity_manifest.json")
         self.manifest_dir = os.path.join(self.output_dir, "manifests")
         os.makedirs(self.manifest_dir, exist_ok=True)
 
@@ -255,13 +256,68 @@ class DatasetWriter:
             )
         os.replace(temp_file, self.progress_file)
 
+    def get_shard_integrity_manifest(self) -> dict[str, dict[str, Any]]:
+        """Read shard integrity records containing SHA-256 and configuration fingerprints."""
+        if not os.path.exists(self.integrity_file):
+            return {}
+        try:
+            with open(self.integrity_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+
+    def record_shard_integrity(
+        self,
+        shard_name: str,
+        sha256_hash: str,
+        sample_count: int,
+        config_fingerprint: str,
+    ) -> None:
+        """Atomically record verified shard SHA-256 checksum and metadata to integrity manifest."""
+        manifest = self.get_shard_integrity_manifest()
+        manifest[shard_name] = {
+            "sha256": sha256_hash,
+            "sample_count": sample_count,
+            "config_fingerprint": config_fingerprint,
+            "generator_version": GENERATOR_VERSION,
+            "schema_version": SCHEMA_VERSION,
+        }
+        temp_file = self.integrity_file + ".tmp"
+        with open(temp_file, "w", encoding="utf-8") as f:
+            json.dump(manifest, f, indent=2)
+        os.replace(temp_file, self.integrity_file)
+
+    def get_manifest_sample_ids(self) -> set[str]:
+        """Read all unique sample IDs currently committed to metadata.csv."""
+        if not os.path.exists(self.metadata_csv):
+            return set()
+        sids = set()
+        try:
+            with open(self.metadata_csv, "r", encoding="utf-8") as f:
+                for row in csv.DictReader(f):
+                    sid = row.get("sample_id")
+                    if sid:
+                        sids.add(sid)
+        except Exception:
+            pass
+        return sids
+
+    def has_completed_manifest_records(self, sample_ids: list[str]) -> bool:
+        """Verify that all given sample IDs are fully recorded in metadata.csv and progress.json."""
+        if not sample_ids:
+            return True
+        manifest_sids = self.get_manifest_sample_ids()
+        progress_sids = self.get_completed_samples()
+        return all(sid in manifest_sids and sid in progress_sids for sid in sample_ids)
+
     def verify_shard(
         self,
         shard_path: str,
         expected_count: int,
         expected_config_hash: str | None = None,
+        verify_checksum: bool = True,
     ) -> bool:
-        """Verify that an HDF5 shard exists, is uncorrupted, and has expected record count and config hash."""
+        """Verify that an HDF5 shard exists, is uncorrupted, and matches expected record count, fingerprint, and checksum."""
         if not os.path.exists(shard_path):
             return False
         try:
@@ -274,12 +330,24 @@ class DatasetWriter:
                     if "object_amplitude" not in f or "intensity_measured" not in f:
                         return False
                 if expected_config_hash is not None:
-                    stored_hash = f.attrs.get("config_fingerprint", "")
-                    if stored_hash and stored_hash != expected_config_hash:
+                    stored_hash = str(f.attrs.get("config_fingerprint", "")).strip()
+                    # Fail closed: missing, empty, or mismatched fingerprint MUST reject shard
+                    if not stored_hash or stored_hash != expected_config_hash:
                         return False
                 # Try reading first and last slice to verify dataset readability
                 _ = f["input"][0]
                 _ = f["input"][-1]
+
+            # Verify against persisted SHA-256 integrity manifest if available
+            if verify_checksum:
+                integrity_manifest = self.get_shard_integrity_manifest()
+                shard_name = os.path.basename(shard_path)
+                if shard_name in integrity_manifest:
+                    expected_sha = integrity_manifest[shard_name].get("sha256")
+                    if expected_sha:
+                        actual_sha = compute_file_sha256(shard_path)
+                        if actual_sha != expected_sha:
+                            return False
             return True
         except Exception:
             return False

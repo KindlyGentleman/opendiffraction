@@ -27,9 +27,17 @@ def run_inpainting_benchmark(
     manifest_path: str = "manifests/task_3/val.csv",
     num_samples: int = 50,
 ) -> dict[str, float]:
-    """Evaluate Inpainting baseline on Task 3 validation samples."""
+    if not os.path.exists(manifest_path):
+        raise FileNotFoundError(f"Manifest not found: {manifest_path}")
+
     print(f"Loading Inpainting evaluation data from {manifest_path}...")
     df_val = pd.read_csv(manifest_path)
+    if "sample_id" not in df_val.columns:
+        raise ValueError(f"Manifest at {manifest_path} is missing required 'sample_id' column.")
+    if df_val["sample_id"].duplicated().any():
+        dups = df_val[df_val["sample_id"].duplicated()]["sample_id"].tolist()
+        raise ValueError(f"Manifest contains duplicate sample IDs: {dups[:5]}")
+
     if num_samples is not None and len(df_val) > num_samples:
         df_val = df_val.head(num_samples)
 
@@ -40,19 +48,15 @@ def run_inpainting_benchmark(
     mae_masked_list = []
     psnr_list = []
     ssim_list = []
+    evaluated_sids = []
 
     t0 = time.time()
     for idx, row in df_val.iterrows():
-        sid = str(row.get("sample_id", ""))
-        if sid and hasattr(ds, "get_by_sample_id"):
-            try:
-                sample = ds.get_by_sample_id(sid)
-            except KeyError:
-                continue
-        else:
-            if idx >= len(ds):
-                break
-            sample = ds[idx]
+        sid = str(row.get("sample_id", "")).strip()
+        if not sid:
+            raise ValueError(f"Manifest row {idx} is missing required 'sample_id' field.")
+        sample = ds.get_by_sample_id(sid)
+        evaluated_sids.append(sid)
         masked_inp = sample["input"][0].numpy()  # (512, 512)
         target = sample["target"][0].numpy()  # unmasked expected intensity
         mask = sample["mask"][0].numpy().astype(bool)  # (512, 512)
@@ -82,6 +86,7 @@ def run_inpainting_benchmark(
         "mean_overall_psnr_db": float(np.mean(psnr_list)),
         "mean_overall_ssim": float(np.mean(ssim_list)),
         "evaluated_samples": len(psnr_list),
+        "evaluated_sample_ids": evaluated_sids,
         "wall_time_s": float(elapsed),
         "throughput_sps": float(len(psnr_list) / max(elapsed, 1e-4)),
     }

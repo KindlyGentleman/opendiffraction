@@ -405,10 +405,14 @@ def generate_dataset(
         if first_shard_path is None:
             first_shard_path = shard_path
 
-        # 2. Check if shard is already complete and verified with matching config
-        if resume and writer.verify_shard(
+        # 2. Check if shard is complete, verified, AND all manifest records exist in metadata.csv and progress.json
+        shard_sample_ids = [t["sample_id"] for t in shard_tasks]
+        shard_valid = writer.verify_shard(
             shard_path, len(shard_tasks), expected_config_hash=config_fingerprint
-        ):
+        )
+        manifest_complete = writer.has_completed_manifest_records(shard_sample_ids)
+
+        if resume and shard_valid and manifest_complete:
             skipped_shards += 1
             continue
 
@@ -419,26 +423,57 @@ def generate_dataset(
             config_fingerprint=config_fingerprint,
             has_phase=True,
         )
-        manifest_rows: list[dict[str, Any]] = []
 
         if num_workers > 1:
+            from concurrent.futures import wait, FIRST_COMPLETED
+            max_pending = 2 * num_workers
+            manifest_rows: list[dict[str, Any]] = [{}] * len(shard_tasks)
             with ThreadPoolExecutor(max_workers=num_workers) as executor:
-                sim_outputs = executor.map(
-                    lambda t: simulate_single_task(t, profiles_mode), shard_tasks
-                )
-                for row_idx, (sample_dict, manifest_rec) in enumerate(sim_outputs):
-                    inc_writer.write_sample(row_idx, sample_dict)
-                    manifest_rows.append(manifest_rec)
+                in_flight: dict[Any, int] = {}
+                task_iter = iter(enumerate(shard_tasks))
+
+                # Prime worker pool with bounded in-flight tasks
+                for _ in range(min(max_pending, len(shard_tasks))):
+                    try:
+                        r_idx, t = next(task_iter)
+                        f = executor.submit(simulate_single_task, t, profiles_mode)
+                        in_flight[f] = r_idx
+                    except StopIteration:
+                        break
+
+                while in_flight:
+                    done, _ = wait(in_flight.keys(), return_when=FIRST_COMPLETED)
+                    for f in done:
+                        r_idx = in_flight.pop(f)
+                        sample_dict, manifest_rec = f.result()
+                        inc_writer.write_sample(r_idx, sample_dict)
+                        manifest_rows[r_idx] = manifest_rec
+                        del sample_dict
+
+                        try:
+                            next_r_idx, next_t = next(task_iter)
+                            next_f = executor.submit(simulate_single_task, next_t, profiles_mode)
+                            in_flight[next_f] = next_r_idx
+                        except StopIteration:
+                            pass
         else:
+            manifest_rows = []
             for row_idx, task in enumerate(tqdm(shard_tasks, desc=f"Simulating {shard_name}")):
                 sample_dict, manifest_rec = simulate_single_task(task, profiles_mode)
                 inc_writer.write_sample(row_idx, sample_dict)
                 manifest_rows.append(manifest_rec)
+                del sample_dict
 
-        # 4. Atomic commit and verified manifest update
-        inc_writer.finalize()
+        # 4. Atomic commit, verified manifest update, and checksum recording
+        sha256_hash = inc_writer.finalize()
         writer.append_manifest_rows(manifest_rows)
         writer.update_progress([t["sample_id"] for t in shard_tasks])
+        writer.record_shard_integrity(
+            shard_name=shard_name,
+            sha256_hash=sha256_hash,
+            sample_count=len(shard_tasks),
+            config_fingerprint=config_fingerprint,
+        )
         total_written += len(shard_tasks)
         shards_written += 1
 
