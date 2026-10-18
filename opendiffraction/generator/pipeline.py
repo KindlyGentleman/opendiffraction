@@ -201,6 +201,23 @@ def simulate_single_task(
         fwd_model = "F1"
         meta = {}
 
+    # 1. Resolve acquisition scenario geometry and physical units BEFORE forward simulation
+    scen_phys = get_scenario_physics(task["profile_id"], meta)
+    meta["scenario_id"] = scen_phys["scenario_id"]
+    meta["scenario_name"] = scen_phys["scenario_name"]
+    meta["photon_energy_kev"] = scen_phys["photon_energy_kev"]
+    meta["wavelength_m"] = scen_phys["wavelength_m"]
+    meta["pixel_pitch_m"] = scen_phys["pixel_pitch_m"]
+    meta["detector_distance_m"] = scen_phys["detector_distance_m"]
+    if "fresnel_propagation_distance_m" not in meta:
+        meta["fresnel_propagation_distance_m"] = scen_phys["detector_distance_m"]
+
+    # Also bind resolved physical units into SimulationConfig
+    cfg.photon_energy_kev = scen_phys["photon_energy_kev"]
+    cfg.wavelength_m = scen_phys["wavelength_m"]
+    cfg.pixel_pitch_m = scen_phys["pixel_pitch_m"]
+    cfg.detector_distance_m = scen_phys["detector_distance_m"]
+
     # Multi-acquisition physical variations
     # acq 0: Reference condition
     # acq 1: Low photon flux / high shot noise
@@ -241,8 +258,6 @@ def simulate_single_task(
         "valid_mask": sim_res.valid_mask,
     }
 
-    scen_phys = get_scenario_physics(task["profile_id"], meta)
-
     manifest_record = {
         "sample_id": task["sample_id"],
         "base_object_id": task["base_object_id"],
@@ -275,9 +290,9 @@ def simulate_single_task(
         "object_seed": task["object_seed"],
         "acquisition_seed": task["acquisition_seed"],
         "photon_energy_kev": f"{scen_phys['photon_energy_kev']:.3f}",
-        "wavelength_m": float(scen_phys["wavelength_m"]),
-        "pixel_pitch_m": float(scen_phys["pixel_pitch_m"]),
-        "detector_distance_m": float(scen_phys["detector_distance_m"]),
+        "wavelength_m": float(sim_res.executed_params.get("wavelength_m", scen_phys["wavelength_m"])),
+        "pixel_pitch_m": float(sim_res.executed_params.get("pixel_pitch_m", scen_phys["pixel_pitch_m"])),
+        "detector_distance_m": float(sim_res.executed_params.get("detector_distance_m", scen_phys["detector_distance_m"])),
         "ground_truth_available": True,
         "shard_name": task.get("shard_name", "shard_000.h5"),
         "row_index": task.get("row_index", 0),

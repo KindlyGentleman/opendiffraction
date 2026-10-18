@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 import numpy as np
 
@@ -48,6 +48,11 @@ class SimulationConfig:
     num_stripes_h: int = 0
     num_stripes_v: int = 0
     irregular_coverage: float = 0.0
+    # Resolved physical geometry fields
+    photon_energy_kev: float | None = None
+    wavelength_m: float | None = None
+    pixel_pitch_m: float | None = None
+    detector_distance_m: float | None = None
 
 
 @dataclass
@@ -66,6 +71,7 @@ class SimulationResult:
     scale_factor: float  # Flux normalization scale factor s
     photon_budget: float  # Total photons simulated
     forward_model: str = "F1"  # Executed physical forward model ID
+    executed_params: dict[str, Any] = field(default_factory=dict)
 
     @property
     def intensity_measured(self) -> np.ndarray:
@@ -245,11 +251,15 @@ def simulate_forward_model(
         distance_m = float(
             metadata.get(
                 "fresnel_propagation_distance_m",
-                metadata.get("detector_distance_m", 0.05),
+                metadata.get("detector_distance_m", getattr(config, "detector_distance_m", 0.05) or 0.05),
             )
         )
-        wavelength_m = float(metadata.get("wavelength_m", 1.24e-10))
-        pixel_pitch_m = float(metadata.get("pixel_pitch_m", 75e-6))
+        wavelength_m = float(
+            metadata.get("wavelength_m", getattr(config, "wavelength_m", 1.24e-10) or 1.24e-10)
+        )
+        pixel_pitch_m = float(
+            metadata.get("pixel_pitch_m", getattr(config, "pixel_pitch_m", 75e-6) or 75e-6)
+        )
 
         _, intensity_ideal = simulate_fresnel_diffraction(
             input_field=obj_field,
@@ -271,7 +281,9 @@ def simulate_forward_model(
         from .models.polychromatic import simulate_polychromatic_diffraction
 
         bw_ratio = float(metadata.get("spectral_bandwidth_fraction", 0.05))
-        central_lam = float(metadata.get("wavelength_m", 1.24e-10))
+        central_lam = float(
+            metadata.get("wavelength_m", getattr(config, "wavelength_m", 1.24e-10) or 1.24e-10)
+        )
         n_bins = int(metadata.get("num_wavelength_bins", 7))
 
         frame = pad_object_to_detector(
@@ -279,16 +291,13 @@ def simulate_forward_model(
             detector_size=config.detector_size,
             offset=config.beam_center_offset,
         )
-        if bw_ratio <= 1e-4:
-            _, intensity_ideal = compute_coherent_diffraction(frame)
-        else:
-            intensity_ideal, _ = simulate_polychromatic_diffraction(
-                frame,
-                central_wavelength_m=central_lam,
-                spectral_bandwidth_ratio=bw_ratio,
-                num_wavelength_bins=n_bins,
-                detector_size=config.detector_size,
-            )
+        intensity_ideal, _ = simulate_polychromatic_diffraction(
+            frame,
+            central_wavelength_m=central_lam,
+            spectral_bandwidth_ratio=bw_ratio,
+            num_wavelength_bins=n_bins,
+            detector_size=config.detector_size,
+        )
         if np.isfinite(config.coherence_length):
             intensity_coh = apply_partial_coherence(
                 intensity_ideal,
@@ -431,6 +440,36 @@ def simulate_forward_model(
     # 8. Strictly masked observation with zero leakage guarantee
     intensity_observed = np.where(mask, intensity_raw, 0.0).astype(np.float32)
 
+    executed_params: dict[str, Any] = {
+        "forward_model": model_key,
+        "photon_energy_kev": float(metadata.get("photon_energy_kev", getattr(config, "photon_energy_kev", 10.0) or 10.0)),
+        "wavelength_m": float(
+            wavelength_m
+            if model_key == "F4"
+            else (
+                central_lam
+                if model_key == "F5"
+                else metadata.get("wavelength_m", getattr(config, "wavelength_m", 1.24e-10) or 1.24e-10)
+            )
+        ),
+        "pixel_pitch_m": float(
+            pixel_pitch_m
+            if model_key == "F4"
+            else metadata.get("pixel_pitch_m", getattr(config, "pixel_pitch_m", 75e-6) or 75e-6)
+        ),
+        "detector_distance_m": float(
+            distance_m
+            if model_key == "F4"
+            else metadata.get("detector_distance_m", getattr(config, "detector_distance_m", 1.0) or 1.0)
+        ),
+        "fresnel_propagation_distance_m": float(
+            distance_m
+            if model_key == "F4"
+            else metadata.get("fresnel_propagation_distance_m", 0.0)
+        ),
+        "spectral_bandwidth_fraction": float(bw_ratio if model_key == "F5" else 0.0),
+    }
+
     return SimulationResult(
         object_amplitude=object_density.astype(np.float32),
         object_phase=object_phase.astype(np.float32) if object_phase is not None else None,
@@ -444,6 +483,7 @@ def simulate_forward_model(
         scale_factor=float(scale),
         photon_budget=float(config.photon_budget),
         forward_model=model_key,
+        executed_params=executed_params,
     )
 
 

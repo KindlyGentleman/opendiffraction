@@ -46,6 +46,10 @@ def simulate_polychromatic_diffraction(
     ny, nx = detector_size
     cy, cx = ny // 2, nx // 2
 
+    if spectral_bandwidth_ratio <= 1e-9 or num_wavelength_bins <= 1:
+        _, base_intensity = simulate_fraunhofer_coherent(object_field, detector_size=detector_size)
+        return base_intensity.astype(np.float32), [(float(central_wavelength_m), 1.0)]
+
     # Gaussian spectral weight distribution
     half_bw = spectral_bandwidth_ratio / 2.0
     lambdas = np.linspace(
@@ -53,14 +57,14 @@ def simulate_polychromatic_diffraction(
         central_wavelength_m * (1.0 + half_bw),
         num_wavelength_bins,
     )
-    sigma_lam = (central_wavelength_m * half_bw) / 2.0
+    sigma_lam = max((central_wavelength_m * half_bw) / 2.0, 1e-18)
     raw_weights = np.exp(-((lambdas - central_wavelength_m) ** 2) / (2.0 * sigma_lam**2))
     norm_weights = raw_weights / np.sum(raw_weights)
 
     # 1. Monochromatic base pattern at lambda_0
     _, base_intensity = simulate_fraunhofer_coherent(object_field, detector_size=detector_size)
 
-    # 2. Integrate scaled patterns
+    # 2. Integrate scaled patterns with physical flux conservation
     polychromatic_intensity = np.zeros(detector_size, dtype=np.float32)
     spectral_components = []
 
@@ -79,6 +83,7 @@ def simulate_polychromatic_diffraction(
 
             from scipy.ndimage import map_coordinates
             scaled_I = map_coordinates(base_intensity, [y_src, x_src], order=1, mode="constant", cval=0.0)
-            polychromatic_intensity += (w * scaled_I).astype(np.float32)
+            # Physical flux density scaling: I_lambda(r) = (1 / s^2) * I_lambda0(r / s)
+            polychromatic_intensity += (w * scaled_I / (scale**2)).astype(np.float32)
 
     return polychromatic_intensity, spectral_components
