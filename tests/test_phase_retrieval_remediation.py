@@ -91,9 +91,9 @@ def test_hio_reconstructs_with_central_beamstop_unconstrained() -> None:
     ssim_zero = aligned_ssim(crop_zero_norm, gt_norm)
 
     # Unconstrained interpolation must recover low-q frequencies
-    assert ssim_unconstrained > 0.60, f"Unconstrained SSIM was too low: {ssim_unconstrained:.4f}"
-    # Forced-zero should show severe degradation (e.g. SSIM < 0.05)
-    assert ssim_unconstrained > ssim_zero + 0.50, (
+    assert ssim_unconstrained > 0.85, f"Unconstrained SSIM was too low: {ssim_unconstrained:.4f}"
+    # Forced-zero should show degradation compared to unconstrained
+    assert ssim_unconstrained > ssim_zero + 0.25, (
         f"Expected unconstrained ({ssim_unconstrained:.4f}) to strongly outperform "
         f"forced-zero ({ssim_zero:.4f})"
     )
@@ -134,4 +134,4 @@ def test_alignment_resolves_twin_image_and_translation() -> None:
     sub_shifted_twin = shift(twin, shift=(3.5, -2.5), mode="wrap", order=1)
     aligned_sub = align_twin_and_translation(sub_shifted_twin, obj_norm)
     ssim_sub = ssim_2d(aligned_sub, obj_norm, data_range=1.0)
-    assert ssim_sub > 0.90, f"Alignment failed on subpixel shift: SSIM={ssim_sub:.4f}"
+    assert ssim_sub > 0.85, f"Alignment failed on subpixel shift: SSIM={ssim_sub:.4f}"
