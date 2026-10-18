@@ -13,13 +13,12 @@ import sys
 import time
 import numpy as np
 import pandas as pd
-from skimage.metrics import structural_similarity as ssim
 
 sys.path.insert(0, os.path.abspath("."))
 
 from benchmarks.missing_pixel_recovery import inpaint_nearest_neighbor
 from opendiffraction.io.torch_dataset import OpenDiffractionTorchDataset
-from opendiffraction.tasks.metrics import psnr
+from opendiffraction.tasks.metrics import psnr, ssim_2d
 
 
 def run_inpainting_benchmark(
@@ -72,7 +71,7 @@ def run_inpainting_benchmark(
 
         p_val = psnr(target, inpainted)
         drange = max(float(np.max(target) - np.min(target)), 1e-6)
-        s_val = ssim(target, inpainted, data_range=drange)
+        s_val = ssim_2d(target, inpainted, data_range=drange)
 
         mae_masked_list.append(mae_hole)
         psnr_list.append(float(p_val))

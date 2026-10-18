@@ -13,13 +13,12 @@ import sys
 import time
 import numpy as np
 import pandas as pd
-from skimage.metrics import structural_similarity as ssim
 
 sys.path.insert(0, os.path.abspath("."))
 
 from benchmarks.denoising import denoise_diffraction_pattern
 from opendiffraction.io.torch_dataset import OpenDiffractionTorchDataset
-from opendiffraction.tasks.metrics import psnr, compute_r_factor
+from opendiffraction.tasks.metrics import compute_r_factor, psnr, ssim_2d
 
 
 def run_denoising_benchmark(
@@ -69,7 +68,7 @@ def run_denoising_benchmark(
 
         # Normalized SSIM
         drange = max(float(np.max(target) - np.min(target)), 1e-6)
-        s_val = ssim(target, denoised, data_range=drange)
+        s_val = ssim_2d(target, denoised, data_range=drange)
 
         psnr_list.append(float(p_val))
         ssim_list.append(float(s_val))
