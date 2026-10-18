@@ -67,10 +67,17 @@ OpenDiffraction produces datasets that are directly compatible with the Deep Pha
    - **Group 6 (V43 - V48)**: Advanced Physics & Out-of-Distribution (pure phase objects, strong vortices, 3D rotations, compound stress regimes).
 
 <p align="center">
+  <img src="assets/figure_variation_profiles_gallery.png" width="95%" alt="Controlled Experimental Variation Profiles Gallery">
+</p>
+<p align="center">
+  <em>Figure 3: Controlled experimental variation profiles gallery illustrating simulated diffraction measurements across specimen morphologies, partial coherence, beam stops, detector gaps, parasitic scatter, and near-field regimes.</em>
+</p>
+
+<p align="center">
   <img src="assets/figure_2_specimens.png" width="95%" alt="Synthetic Specimen Morphologies">
 </p>
 <p align="center">
-  <em>Figure 3: Synthetic specimen phantoms spanning biological structures (cells, viruses, protein clusters) to nanomaterials (core-shell nanoparticles, nanorods, colloidal crystals, internal fracture defects).</em>
+  <em>Figure 4: Synthetic specimen phantoms spanning biological structures (cells, viruses, protein clusters) to nanomaterials (core-shell nanoparticles, nanorods, colloidal crystals, internal fracture defects).</em>
 </p>
 
 3. **6 Acquisition Scenarios (S1 - S6)**:
@@ -99,14 +106,14 @@ OpenDiffraction produces datasets that are directly compatible with the Deep Pha
   <img src="assets/figure_10_phase_retrieval.png" width="90%" alt="Phase Retrieval Baseline Reconstruction">
 </p>
 <p align="center">
-  <em>Figure 4: Baseline iterative phase retrieval (HIO + ER) achieving real-space object reconstruction and phase-ambiguity alignment from masked diffraction intensities alone.</em>
+  <em>Figure 5: Baseline iterative phase retrieval (HIO + ER) achieving real-space object reconstruction and phase-ambiguity alignment from masked diffraction intensities alone.</em>
 </p>
 
 <p align="center">
   <img src="assets/figure_16_tasks_summary.png" width="90%" alt="12 Machine Learning Benchmark Tasks">
 </p>
 <p align="center">
-  <em>Figure 5: 12 standardized machine learning benchmark tasks (T1 to T12) establishing evaluation protocols across inverse imaging, denoising, hit-finding, and domain adaptation.</em>
+  <em>Figure 6: 12 standardized machine learning benchmark tasks (T1 to T12) establishing evaluation protocols across inverse imaging, denoising, hit-finding, and domain adaptation.</em>
 </p>
 
 5. **Official CXI Format Support**:
