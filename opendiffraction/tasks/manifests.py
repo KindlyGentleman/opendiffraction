@@ -43,6 +43,24 @@ TASK_DEFINITIONS: dict[str, dict[str, Any]] = {
         "secondary_metrics": ["macro_f1"],
         "description": "Classify diffraction frames into single-particle hit, multi-particle collision, or blank non-hit.",
     },
+    "T4A": {
+        "name": "Binary Hit Finding",
+        "type": "Binary Classification",
+        "input_modalities": ["intensity_measured"],
+        "target_modalities": ["is_hit"],
+        "primary_metric": "balanced_accuracy",
+        "secondary_metrics": ["accuracy", "precision", "recall", "f1_score"],
+        "description": "Binary screening of diffraction frames into valid scattering events (hits) vs blank detector readouts (non-hits).",
+    },
+    "T4B": {
+        "name": "Four-Class Hit Characterization",
+        "type": "Multiclass Classification",
+        "input_modalities": ["intensity_measured"],
+        "target_modalities": ["hit_status"],
+        "primary_metric": "macro_f1",
+        "secondary_metrics": ["four_class_accuracy", "per_class_recall", "confusion_matrix"],
+        "description": "Fine-grained physical classification into single-particle hit, off-center hit, multi-particle collision, or blank non-hit.",
+    },
     "T5": {
         "name": "Detector Defect Segmentation",
         "type": "Semantic Segmentation",
@@ -138,7 +156,7 @@ def build_task_manifest(
     elif task_id in ("T2", "T3"):
         # Denoising & inpainting
         manifest = df[df["split"].isin(["train", "valid", "test"])].copy()
-    elif task_id == "T4":
+    elif task_id in ("T4", "T4A", "T4B"):
         # Hit finding: prioritize Group 5 profiles (V37-V42) specifically designed for hit finding
         if prof_col is not None and df[prof_col].isin(["V37", "V38", "V39", "V40", "V41", "V42"]).any():
             manifest = df[df[prof_col].isin(["V37", "V38", "V39", "V40", "V41", "V42"])].copy()
@@ -146,6 +164,9 @@ def build_task_manifest(
             manifest = df[df["hit_status"].notna()].copy()
         else:
             manifest = df.copy()
+
+        if "hit_status" in manifest.columns:
+            manifest["is_hit"] = manifest["hit_status"] != "non_hit"
 
         if balance_classes and "hit_status" in manifest.columns:
             counts = manifest["hit_status"].value_counts()

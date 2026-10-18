@@ -58,8 +58,17 @@ class OpenDiffractionDataset:
             with open(self.manifest_path, "r", encoding="utf-8") as f:
                 for r in csv.DictReader(f):
                     sid = r.get("sample_id")
-                    if not r.get("shard_name") and sid in self._meta_by_id:
-                        r = dict(self._meta_by_id[sid], **r)
+                    if not r.get("shard_name"):
+                        if sid in self._meta_by_id:
+                            r = dict(self._meta_by_id[sid], **r)
+                        else:
+                            raise KeyError(
+                                f"Sample ID '{sid}' in manifest not found in dataset metadata or shard index."
+                            )
+                    if split is not None and r.get("split") and r.get("split") != split:
+                        raise ValueError(
+                            f"Sample {sid} has split '{r.get('split')}' which does not match requested dataset split '{split}'."
+                        )
                     self.records.append(r)
         elif os.path.exists(self.metadata_csv):
             with open(self.metadata_csv, "r", encoding="utf-8") as f:
@@ -91,6 +100,14 @@ class OpenDiffractionDataset:
                                 }
                             )
 
+        self._sample_id_to_idx: dict[str, int] = {}
+        for i, rec in enumerate(self.records):
+            sid = rec.get("sample_id")
+            if sid:
+                if sid in self._sample_id_to_idx:
+                    raise ValueError(f"Duplicate sample_id detected in dataset records: '{sid}'")
+                self._sample_id_to_idx[sid] = i
+
     def __len__(self) -> int:
         return len(self.records)
 
@@ -100,6 +117,10 @@ class OpenDiffractionDataset:
 
         rec = self.records[idx]
         shard_path = os.path.join(self.data_dir, rec["shard_name"])
+        if not os.path.exists(shard_path):
+            raise FileNotFoundError(
+                f"Shard file not found for sample '{rec.get('sample_id')}': {shard_path}"
+            )
         row = int(rec["row_index"])
 
         with h5py.File(shard_path, "r") as f:
@@ -133,7 +154,15 @@ class OpenDiffractionDataset:
 
     def get_by_sample_id(self, sample_id: str) -> DiffractionSample:
         """Retrieve a specific sample by unique sample_id."""
-        for idx, rec in enumerate(self.records):
-            if rec.get("sample_id") == sample_id:
-                return self[idx]
-        raise KeyError(f"Sample ID '{sample_id}' not found in dataset index.")
+        if not hasattr(self, "_sample_id_to_idx") or self._sample_id_to_idx is None:
+            self._sample_id_to_idx = {}
+            for i, rec in enumerate(self.records):
+                sid = rec.get("sample_id")
+                if sid:
+                    if sid in self._sample_id_to_idx:
+                        raise ValueError(f"Duplicate sample_id detected in dataset records: '{sid}'")
+                    self._sample_id_to_idx[sid] = i
+        idx = self._sample_id_to_idx.get(sample_id)
+        if idx is None:
+            raise KeyError(f"Sample ID '{sample_id}' not found in dataset index.")
+        return self[idx]

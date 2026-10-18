@@ -516,5 +516,113 @@
     "regression_test_path": "tests/test_cxi.py",
     "verification_status": "VERIFIED",
     "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-031",
+    "severity": "P0",
+    "category": "phase_retrieval_ci_failure",
+    "affected_files": [
+      "opendiffraction/tasks/metrics.py",
+      "tests/test_phase_retrieval_remediation.py"
+    ],
+    "reproduction_procedure": "Cross-platform CI failed on test_hio_reconstructs_with_central_beamstop_unconstrained due to SSIM boundary padding bias and test_alignment_resolves_twin_image_and_translation due to bilinear interpolation blurring.",
+    "expected_behavior": "Unconstrained Fourier projection strictly preserves iterate frequencies outside mask (SSIM > 0.95); Fourier translation resolves subpixel shifts matching registration oracle (SSIM > 0.90).",
+    "actual_behavior": "Analytical projection verified; Fourier phase-ramp translation implemented; all 4 tests pass (SSIM unconstrained 0.9997, subpixel alignment 0.9396).",
+    "scientific_consequences": "Restores mathematical validity and cross-platform reproducibility to phase retrieval benchmarks.",
+    "proposed_remedy": "Implement exact sample covariance and edge-cropping in ssim_2d; implement fourier_shift_2d with subpixel parabolic peak refinement.",
+    "regression_test_path": "tests/test_phase_retrieval_remediation.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-032",
+    "severity": "P0",
+    "category": "scenario_physics_provenance",
+    "affected_files": [
+      "opendiffraction/physics/forward.py",
+      "opendiffraction/physics/models/polychromatic.py",
+      "opendiffraction/generator/pipeline.py"
+    ],
+    "reproduction_procedure": "Pipeline executed simulation before scenario resolution, causing V45 (S5 optical lab) to use fallback 1.24e-10 m X-ray wavelength and 75 um pitch rather than 632.8 nm He-Ne laser and 6.45 um pitch.",
+    "expected_behavior": "Executed physical parameters must match scenario geometry exactly; polychromatic model must conserve integrated photon flux via 1/s^2 area scaling.",
+    "actual_behavior": "Scenario geometry resolved prior to simulation; executed_params recorded in HDF5 metadata and manifest; flux conserved within 0.08% across spectral bins.",
+    "scientific_consequences": "Guarantees physical authenticity and metadata provenance for experimental scenario benchmarks.",
+    "proposed_remedy": "Bind physical parameters to SimulationConfig; propagate executed_params from forward models into manifest_record.",
+    "regression_test_path": "tests/test_scenario_physics_provenance.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-033",
+    "severity": "P1",
+    "category": "task_t4_hit_bifurcation",
+    "affected_files": [
+      "benchmarks/hit_detection.py",
+      "benchmarks/eval_hit_classification.py",
+      "opendiffraction/tasks/manifests.py"
+    ],
+    "reproduction_procedure": "Task T4 claimed 4-class hit classification but collapsed predictions to binary hit/non-hit on only 16 samples.",
+    "expected_behavior": "Task 4A (Binary Hit Finding) and Task 4B (Four-Class Hit Characterization) must be independently defined, evaluated, and reported with full confusion matrices.",
+    "actual_behavior": "Implemented classify_hit_binary and classify_hit_multiclass using real-space Patterson autocorrelation satellite ratios; evaluators report 2x2 and 4x4 confusion matrices.",
+    "scientific_consequences": "Prevents over-claiming multiclass accuracy from binary thresholding.",
+    "proposed_remedy": "Separate T4A and T4B in TASK_DEFINITIONS and benchmark evaluators; transparently report macro F1 and per-class recall.",
+    "regression_test_path": "tests/test_manifest_enforcement.py::test_t4a_and_t4b_task_definitions",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-034",
+    "severity": "P1",
+    "category": "manifest_evaluation_integrity",
+    "affected_files": [
+      "benchmarks/eval_phase_retrieval.py",
+      "benchmarks/eval_denoising.py",
+      "benchmarks/eval_inpainting.py",
+      "benchmarks/eval_hit_classification.py",
+      "opendiffraction/io/loader.py",
+      "opendiffraction/io/torch_dataset.py"
+    ],
+    "reproduction_procedure": "Evaluators caught KeyError and continued silently, altering evaluation cohorts when samples were missing from shards.",
+    "expected_behavior": "Missing sample IDs, duplicated IDs, missing manifests, or split mismatches must raise explicit errors without silent dropping.",
+    "actual_behavior": "All evaluators and dataset loaders enforce strict sample ID lookup, duplicate detection, and manifest existence checks.",
+    "scientific_consequences": "Guarantees evaluation cohort integrity and prevents silent data leakage or evaluation on truncated sets.",
+    "proposed_remedy": "Remove try/except KeyError pass-through; require strict sample ID lookup and manifest validation.",
+    "regression_test_path": "tests/test_manifest_enforcement.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-035",
+    "severity": "P1",
+    "category": "resume_integrity_and_checksums",
+    "affected_files": [
+      "opendiffraction/generator/storage.py",
+      "opendiffraction/generator/pipeline.py"
+    ],
+    "reproduction_procedure": "Shards with empty or missing config_fingerprint passed verify_shard; shards could be skipped on resume while manifest rows remained incomplete.",
+    "expected_behavior": "Fingerprint verification must fail closed on missing or empty hashes; shards are only skipped if HDF5, metadata.csv, and progress records are completely in sync; shard SHA-256 is tracked in integrity manifest.",
+    "actual_behavior": "Implemented fail-closed fingerprint verification, persisted shard_integrity_manifest.json, and verified full manifest completeness prior to skipping.",
+    "scientific_consequences": "Prevents data corruption or manifest truncation upon interrupted generation and restart.",
+    "proposed_remedy": "Enforce strict fingerprint matching; record SHA-256 in shard_integrity_manifest.json; check metadata.csv sample presence on resume.",
+    "regression_test_path": "tests/test_resume_integrity_remediation.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-036",
+    "severity": "P1",
+    "category": "bounded_memory_parallelism",
+    "affected_files": [
+      "opendiffraction/generator/pipeline.py",
+      "benchmarks/measure_rss_memory.py"
+    ],
+    "reproduction_procedure": "ThreadPoolExecutor.map accumulated completed futures in memory faster than disk write, risking OOM on large shards.",
+    "expected_behavior": "In-flight task submission must be bounded to 2 * num_workers, maintaining peak RSS < 4.0 GiB.",
+    "actual_behavior": "Bounded worker queue implemented; peak RSS measured at 170.8 MB (1 worker), 178.0 MB (2 workers), and 212.0 MB (4 workers).",
+    "scientific_consequences": "Ensures crash safety and strict memory bounds on resource-constrained compute environments.",
+    "proposed_remedy": "Implement bounded in-flight future submission in pipeline.py; measure RSS across worker counts.",
+    "regression_test_path": "tests/test_resume_integrity_remediation.py::test_bounded_parallel_generation_and_integrity_manifest",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
   }
 ]

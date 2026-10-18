@@ -1,0 +1,29 @@
+{
+  "workers_1": {
+    "num_workers": 1,
+    "total_samples": 12,
+    "elapsed_seconds": 8.559441089630127,
+    "peak_rss_mb": 170.80859375,
+    "peak_rss_gib": 0.16680526733398438,
+    "throughput_sps": 1.4019606974733612,
+    "memory_bounded_ok": true
+  },
+  "workers_2": {
+    "num_workers": 2,
+    "total_samples": 12,
+    "elapsed_seconds": 7.033584356307983,
+    "peak_rss_mb": 177.99609375,
+    "peak_rss_gib": 0.17382431030273438,
+    "throughput_sps": 1.7061002459205523,
+    "memory_bounded_ok": true
+  },
+  "workers_4": {
+    "num_workers": 4,
+    "total_samples": 12,
+    "elapsed_seconds": 6.155860185623169,
+    "peak_rss_mb": 212.01171875,
+    "peak_rss_gib": 0.20704269409179688,
+    "throughput_sps": 1.949362012481318,
+    "memory_bounded_ok": true
+  }
+}

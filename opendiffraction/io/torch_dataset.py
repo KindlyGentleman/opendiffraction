@@ -98,8 +98,17 @@ class OpenDiffractionTorchDataset(Dataset):
             with open(self.manifest_path, "r", encoding="utf-8") as f:
                 for r in csv.DictReader(f):
                     sid = r.get("sample_id")
-                    if not r.get("shard_name") and sid in meta_by_id:
-                        r = dict(meta_by_id[sid], **r)
+                    if not r.get("shard_name"):
+                        if sid in meta_by_id:
+                            r = dict(meta_by_id[sid], **r)
+                        else:
+                            raise KeyError(
+                                f"Sample ID '{sid}' in manifest not found in dataset metadata or shard index."
+                            )
+                    if self.split is not None and r.get("split") and r.get("split") != self.split:
+                        raise ValueError(
+                            f"Sample {sid} has split '{r.get('split')}' which does not match requested dataset split '{self.split}'."
+                        )
                     self.records.append(r)
         elif os.path.exists(self.metadata_csv):
             with open(self.metadata_csv, "r", encoding="utf-8") as f:
@@ -131,16 +140,24 @@ class OpenDiffractionTorchDataset(Dataset):
                             "split": sp,
                         }
                     )
-        self._sample_id_to_idx = {
-            r.get("sample_id"): i for i, r in enumerate(self.records) if r.get("sample_id")
-        }
+        self._sample_id_to_idx: dict[str, int] = {}
+        for i, r in enumerate(self.records):
+            sid = r.get("sample_id")
+            if sid:
+                if sid in self._sample_id_to_idx:
+                    raise ValueError(f"Duplicate sample_id detected in dataset records: '{sid}'")
+                self._sample_id_to_idx[sid] = i
 
     def get_by_sample_id(self, sample_id: str) -> Any:
         """Retrieve a specific sample by unique sample_id."""
         if not hasattr(self, "_sample_id_to_idx") or self._sample_id_to_idx is None:
-            self._sample_id_to_idx = {
-                r.get("sample_id"): i for i, r in enumerate(self.records) if r.get("sample_id")
-            }
+            self._sample_id_to_idx = {}
+            for i, r in enumerate(self.records):
+                sid = r.get("sample_id")
+                if sid:
+                    if sid in self._sample_id_to_idx:
+                        raise ValueError(f"Duplicate sample_id detected in dataset records: '{sid}'")
+                    self._sample_id_to_idx[sid] = i
         idx = self._sample_id_to_idx.get(sample_id)
         if idx is None:
             raise KeyError(f"Sample ID '{sample_id}' not found in dataset manifest or index.")
@@ -155,6 +172,8 @@ class OpenDiffractionTorchDataset(Dataset):
             self._file_handles = {}
 
         if shard_path not in self._file_handles:
+            if not os.path.exists(shard_path):
+                raise FileNotFoundError(f"Shard file not found: {shard_path}")
             self._file_handles[shard_path] = h5py.File(shard_path, "r")
         return self._file_handles[shard_path]
 

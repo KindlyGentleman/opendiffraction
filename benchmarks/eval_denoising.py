@@ -13,13 +13,12 @@ import sys
 import time
 import numpy as np
 import pandas as pd
-from skimage.metrics import structural_similarity as ssim
 
 sys.path.insert(0, os.path.abspath("."))
 
 from benchmarks.denoising import denoise_diffraction_pattern
 from opendiffraction.io.torch_dataset import OpenDiffractionTorchDataset
-from opendiffraction.tasks.metrics import psnr, compute_r_factor
+from opendiffraction.tasks.metrics import compute_r_factor, psnr, ssim_2d
 
 
 def run_denoising_benchmark(
@@ -27,9 +26,17 @@ def run_denoising_benchmark(
     manifest_path: str = "manifests/task_2/val.csv",
     num_samples: int = 50,
 ) -> dict[str, float]:
-    """Evaluate Denoising baseline on Task 2 validation samples."""
+    if not os.path.exists(manifest_path):
+        raise FileNotFoundError(f"Manifest not found: {manifest_path}")
+
     print(f"Loading Denoising evaluation data from {manifest_path}...")
     df_val = pd.read_csv(manifest_path)
+    if "sample_id" not in df_val.columns:
+        raise ValueError(f"Manifest at {manifest_path} is missing required 'sample_id' column.")
+    if df_val["sample_id"].duplicated().any():
+        dups = df_val[df_val["sample_id"].duplicated()]["sample_id"].tolist()
+        raise ValueError(f"Manifest contains duplicate sample IDs: {dups[:5]}")
+
     if num_samples is not None and len(df_val) > num_samples:
         df_val = df_val.head(num_samples)
 
@@ -40,19 +47,15 @@ def run_denoising_benchmark(
     psnr_list = []
     ssim_list = []
     r_factor_list = []
+    evaluated_sids = []
 
     t0 = time.time()
     for idx, row in df_val.iterrows():
-        sid = str(row.get("sample_id", ""))
-        if sid and hasattr(ds, "get_by_sample_id"):
-            try:
-                sample = ds.get_by_sample_id(sid)
-            except KeyError:
-                continue
-        else:
-            if idx >= len(ds):
-                break
-            sample = ds[idx]
+        sid = str(row.get("sample_id", "")).strip()
+        if not sid:
+            raise ValueError(f"Manifest row {idx} is missing required 'sample_id' field.")
+        sample = ds.get_by_sample_id(sid)
+        evaluated_sids.append(sid)
         noisy_inp = sample["input"][0].numpy()  # (512, 512)
         target = sample["target"][0].numpy()  # (512, 512) or clean intensity
 
@@ -65,7 +68,7 @@ def run_denoising_benchmark(
 
         # Normalized SSIM
         drange = max(float(np.max(target) - np.min(target)), 1e-6)
-        s_val = ssim(target, denoised, data_range=drange)
+        s_val = ssim_2d(target, denoised, data_range=drange)
 
         psnr_list.append(float(p_val))
         ssim_list.append(float(s_val))
@@ -80,6 +83,7 @@ def run_denoising_benchmark(
         "mean_ssim": float(np.mean(ssim_list)),
         "mean_r_factor": float(np.mean(r_factor_list)),
         "evaluated_samples": len(psnr_list),
+        "evaluated_sample_ids": evaluated_sids,
         "wall_time_s": float(elapsed),
         "throughput_sps": float(len(psnr_list) / max(elapsed, 1e-4)),
     }

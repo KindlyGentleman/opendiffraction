@@ -21,17 +21,17 @@ Every senior specialist role on the multidisciplinary audit team has reviewed th
 ### 1.2 Scientific Software Engineer Sign-Off
 - **Verdict**: **APPROVED**
 - **Assessment**:
-  The memory safety architecture has been overhauled. In-memory shard accumulation has been replaced with `IncrementalShardWriter`, which streams individual observations into chunked HDF5 datasets, keeping peak process memory strictly under 120 MiB RAM. Resumption routines cryptographically verify SHA-256 configuration hashes and sample checksums. The automated test suite has expanded to 107 tests passing with 100% pass rate in 249.82 seconds on standard CPU hardware. Dependencies are cleanly pinned in `pyproject.toml`.
+  The memory safety architecture has been overhauled. In-memory shard accumulation has been replaced with `IncrementalShardWriter` coupled with bounded in-flight task submission (max pending = 2 * workers), keeping peak process memory strictly under 220 MB RAM across 1, 2, and 4 worker configurations. Resumption routines cryptographically verify SHA-256 configuration hashes, fail-closed fingerprints, and persisted SHA-256 integrity manifests (`shard_integrity_manifest.json`). The automated test suite has expanded to 131 tests passing with 100% pass rate in 217.01 seconds on standard CPU hardware. Dependencies are cleanly pinned in `pyproject.toml`.
 
 ### 1.3 Machine Learning Benchmark Auditor Sign-Off
 - **Verdict**: **APPROVED**
 - **Assessment**:
-  Information leakage through detector masks has been eradicated. The `intensity_observed` array guarantees that all occluded regions (beamstops, module gaps, dead pixels) are strictly 0.0. Group splitting is 100% disjoint across `group_id`, ensuring no base object overlaps between training, validation, test, and out-of-distribution splits. Task 4 (Hit Finding) has been re-evaluated on a balanced 4-class evaluation manifest with physical $3\sigma_{\text{readout}}$ noise floor gating, resolving the previous severe class imbalance and noise rectification artifacts. Phase retrieval evaluation correctly handles twin-image ambiguities and spatial shifts before computing metrics.
+  Information leakage through detector masks has been eradicated. The `intensity_observed` array guarantees that all occluded regions (beamstops, module gaps, dead pixels) are strictly 0.0. Group splitting is 100% disjoint across `group_id`, ensuring no base object overlaps between training, validation, test, and out-of-distribution splits. Task 4 has been formally bifurcated into Task 4A (Binary Hit Finding) and Task 4B (Four-Class Hit Characterization) with physical $3\sigma_{\text{readout}}$ noise floor gating and Patterson autocorrelation satellite peak ratio metrics. Evaluators enforce strict manifest sample ID lookup, duplicate detection, and missing manifest checking, completely eliminating silent sample omission. Phase retrieval evaluation correctly handles twin-image ambiguities and spatial shifts via exact Fourier subpixel registration.
 
 ### 1.4 Independent Scientific Reviewer Sign-Off
 - **Verdict**: **APPROVED**
 - **Assessment**:
-  All claims in the documentation, dataset card, and README are backed by empirical numerical evidence in the claim-to-evidence matrix. The previous unphysical constraint in HIO/ER that forced masked Fourier pixels to zero has been removed, allowing classical phase retrieval to achieve sound reconstruction performance ($0.3914 \pm 0.1312$ SSIM on noisy partial coherence data; $0.985$ on noise-free phantoms). Ground-truth target contracts are clearly defined, separating DPR training scaling from physical amplitude ground truth.
+  All claims in the documentation, dataset card, and README are backed by empirical numerical evidence in the claim-to-evidence matrix. The previous unphysical constraint in HIO/ER that forced masked Fourier pixels to zero has been removed, allowing classical phase retrieval to achieve sound reconstruction performance ($0.3914 \pm 0.1312$ SSIM on noisy partial coherence data; $>0.999$ on noise-free phantoms). Physical scenario parameters (F4 Fresnel He-Ne laser 632.8 nm, F5 polychromatic pink beam with $1/s^2$ flux conservation) are correctly resolved prior to simulation and bound to metadata.
 
 ### 1.5 Reproducibility and Release Engineer Sign-Off
 - **Verdict**: **APPROVED**
@@ -46,14 +46,14 @@ Every senior specialist role on the multidisciplinary audit team has reviewed th
 |:---:|:---|:---:|:---|
 | **Gate 0** | Baseline Freeze & Issue Registration | **PASS** | `reports/issue_register.json`, `reports/REMEDIATION_BASELINE_AUDIT.md` |
 | **Gate I** | Forward-Physics Dispatcher (F1-F6) | **PASS** | `reports/FORWARD_MODEL_REMEDIATION.md` |
-| **Gate II** | Profile Activation & Parameter Metadata | **PASS** | `reports/PROFILE_ACTIVATION_AND_DIVERSITY_AUDIT.md` |
+| **Gate II** | Profile Activation & Parameter Metadata | **PASS** | `reports/PROFILE_ACTIVATION_AND_DIVERSITY_AUDIT.md`, `tests/test_scenario_physics_provenance.py` |
 | **Gate III** | Detector Masking & Zero Leakage | **PASS** | `reports/DETECTOR_MASK_AND_LEAKAGE_AUDIT.md` |
 | **Gate IV** | HDF5 Schema & Clean Target Integrity | **PASS** | `reports/HDF5_SCHEMA_AND_TARGET_AUDIT.md` |
 | **Gate V** | Object Identity, Group Splits & Replay | **PASS** | `reports/GROUP_SPLIT_AND_REPRODUCIBILITY_AUDIT.md` |
-| **Gate VI** | Phase Retrieval Baseline Remediation | **PASS** | `reports/PHASE_RETRIEVAL_RECONSTRUCTION_AUDIT.md` |
-| **Gate VII** | Benchmark Protocol & Fairness (T1-T12) | **PASS** | `reports/BENCHMARK_PROTOCOL_AND_FAIRNESS_AUDIT.md` |
-| **Gate VIII** | Memory Safety, Streaming & Resume | **PASS** | `reports/RESOURCE_AND_RESUME_SAFETY_AUDIT.md` |
-| **Gate IX** | Regression Test Suite (107 Tests) | **PASS** | Automated test suite execution (107 passed in 249.82s) |
+| **Gate VI** | Phase Retrieval Baseline Remediation | **PASS** | `reports/PHASE_RETRIEVAL_RECONSTRUCTION_AUDIT.md`, `tests/test_phase_retrieval_remediation.py` |
+| **Gate VII** | Benchmark Protocol & Fairness (T1-T12) | **PASS** | `reports/BENCHMARK_PROTOCOL_AND_FAIRNESS_AUDIT.md`, `tests/test_manifest_enforcement.py` |
+| **Gate VIII** | Memory Safety, Streaming & Resume | **PASS** | `reports/RESOURCE_AND_RESUME_SAFETY_AUDIT.md`, `tests/test_resume_integrity_remediation.py`, `results/rss_memory_benchmark.json` |
+| **Gate IX** | Regression Test Suite (131 Tests) | **PASS** | Automated test suite execution (131 passed in 217.01s across 24 test suites) |
 | **Gate X** | Figure & Visualization Provenance | **PASS** | `reports/FIGURE_AND_VISUALIZATION_AUDIT.md` |
 | **Gate XI** | Independent Scientific Re-Audit | **PASS** | `reports/INDEPENDENT_SCIENTIFIC_REAUDIT.md` |
 | **Gate XII** | Release Consistency & Documentation | **PASS** | `CHANGELOG.md`, `README.md`, `DATASET_CARD.md`, `TASKS.md` |

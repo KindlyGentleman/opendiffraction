@@ -31,8 +31,17 @@ def run_phase_retrieval_benchmark(
     seed: int = 42,
 ) -> dict[str, float]:
     """Evaluate HIO/ER baseline on Task 1 validation samples."""
+    if not os.path.exists(manifest_path):
+        raise FileNotFoundError(f"Manifest not found: {manifest_path}")
+
     print(f"Loading Phase Retrieval evaluation data from {manifest_path} (regime: {support_regime})...")
     df_val = pd.read_csv(manifest_path)
+    if "sample_id" not in df_val.columns:
+        raise ValueError(f"Manifest at {manifest_path} is missing required 'sample_id' column.")
+    if df_val["sample_id"].duplicated().any():
+        dups = df_val[df_val["sample_id"].duplicated()]["sample_id"].tolist()
+        raise ValueError(f"Manifest contains duplicate sample IDs: {dups[:5]}")
+
     if num_samples is not None and len(df_val) > num_samples:
         df_val = df_val.head(num_samples)
 
@@ -44,19 +53,15 @@ def run_phase_retrieval_benchmark(
     mse_list = []
     r_factor_list = []
     pearson_r_list = []
+    evaluated_sids = []
 
     t0 = time.time()
     for idx, row in df_val.iterrows():
-        sid = str(row.get("sample_id", ""))
-        if sid and hasattr(ds, "get_by_sample_id"):
-            try:
-                sample = ds.get_by_sample_id(sid)
-            except KeyError:
-                continue
-        else:
-            if idx >= len(ds):
-                break
-            sample = ds[idx]
+        sid = str(row.get("sample_id", "")).strip()
+        if not sid:
+            raise ValueError(f"Manifest row {idx} is missing required 'sample_id' field.")
+        sample = ds.get_by_sample_id(sid)
+        evaluated_sids.append(sid)
         inp = sample["input"][0].numpy()  # (512, 512)
         target = sample["target"][0].numpy()  # (64, 64)
         mask = sample["mask"][0].numpy()  # (512, 512)
@@ -92,6 +97,7 @@ def run_phase_retrieval_benchmark(
         "mean_final_r_factor": float(np.mean(r_factor_list)),
         "mean_pearson_r": float(np.mean(pearson_r_list)),
         "evaluated_samples": len(ssim_list),
+        "evaluated_sample_ids": evaluated_sids,
         "wall_time_s": float(elapsed),
         "throughput_sps": float(len(ssim_list) / max(elapsed, 1e-4)),
     }

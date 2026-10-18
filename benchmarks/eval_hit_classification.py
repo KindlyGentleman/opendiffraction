@@ -12,12 +12,57 @@ import sys
 import time
 import numpy as np
 import pandas as pd
-from sklearn.metrics import (
-    accuracy_score,
-    balanced_accuracy_score,
-    confusion_matrix,
-    precision_recall_fscore_support,
-)
+try:
+    from sklearn.metrics import (
+        accuracy_score,
+        balanced_accuracy_score,
+        confusion_matrix,
+        precision_recall_fscore_support,
+    )
+except ImportError:
+    def accuracy_score(y_true, y_pred):
+        return float(np.mean(np.array(y_true) == np.array(y_pred))) if len(y_true) else 0.0
+
+    def confusion_matrix(y_true, y_pred, labels=None):
+        if labels is None:
+            labels = sorted(list(set(y_true) | set(y_pred)))
+        label_to_idx = {l: i for i, l in enumerate(labels)}
+        cm = np.zeros((len(labels), len(labels)), dtype=int)
+        for t, p in zip(y_true, y_pred):
+            if t in label_to_idx and p in label_to_idx:
+                cm[label_to_idx[t], label_to_idx[p]] += 1
+        return cm
+
+    def precision_recall_fscore_support(y_true, y_pred, labels=None, average=None, zero_division=0):
+        if labels is None:
+            labels = sorted(list(set(y_true) | set(y_pred)))
+        precisions = []
+        recalls = []
+        f1s = []
+        supports = []
+        for l in labels:
+            tp = sum(1 for yt, yp in zip(y_true, y_pred) if yt == l and yp == l)
+            fp = sum(1 for yt, yp in zip(y_true, y_pred) if yt != l and yp == l)
+            fn = sum(1 for yt, yp in zip(y_true, y_pred) if yt == l and yp != l)
+            supp = sum(1 for yt in y_true if yt == l)
+            prec = tp / (tp + fp) if (tp + fp) > 0 else float(zero_division)
+            rec = tp / (tp + fn) if (tp + fn) > 0 else float(zero_division)
+            f1 = (2 * prec * rec) / (prec + rec) if (prec + rec) > 0 else float(zero_division)
+            precisions.append(prec)
+            recalls.append(rec)
+            f1s.append(f1)
+            supports.append(supp)
+
+        if average == "binary":
+            return precisions[0], recalls[0], f1s[0], supports[0]
+        elif average == "macro":
+            return float(np.mean(precisions)), float(np.mean(recalls)), float(np.mean(f1s)), None
+        return np.array(precisions), np.array(recalls), np.array(f1s), np.array(supports)
+
+    def balanced_accuracy_score(y_true, y_pred):
+        labels = sorted(list(set(y_true)))
+        _, rec, _, _ = precision_recall_fscore_support(y_true, y_pred, labels=labels, average=None, zero_division=0)
+        return float(np.mean(rec)) if len(rec) else 0.0
 
 sys.path.insert(0, os.path.abspath("."))
 
@@ -36,6 +81,12 @@ def run_hit_classification_benchmark(
 
     print(f"Loading Hit Classification evaluation data from {manifest_path}...")
     df_val = pd.read_csv(manifest_path)
+    if "sample_id" not in df_val.columns:
+        raise ValueError(f"Manifest at {manifest_path} is missing required 'sample_id' column.")
+    if df_val["sample_id"].duplicated().any():
+        dups = df_val[df_val["sample_id"].duplicated()]["sample_id"].tolist()
+        raise ValueError(f"Manifest contains duplicate sample IDs: {dups[:5]}")
+
     if num_samples is not None and len(df_val) > num_samples:
         df_val = df_val.head(num_samples)
 
