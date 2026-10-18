@@ -17,13 +17,13 @@
 > **OpenDiffraction 3.1.0 Scientific Remediation Release**
 >
 > OpenDiffraction 3.1.0 incorporates a complete scientific reconstruction and audit:
-> - Fully dispatched physical forward models F1 through F6.
-> - Strictly enforced detector information barrier (`intensity_observed` with zero unmasked pixel leakage).
-> - Repaired Fresnel near-field optical centering ($z=0$ identity confirmed to machine precision).
-> - Transparent HDF5 target contracts distinguishing DPR neural network scaling ($O \cdot s$) from physical amplitude ($O \cdot \sqrt{s}$).
-> - Repaired classical phase retrieval baseline (HIO/ER) restoring baseline SSIM from 0.018 to 0.391.
-> - Guaranteed zero object leakage across group-disjoint splits and deterministic replay from manifest seeds.
-> - Direct PyTorch DataLoader integration via `opendiffraction.io.torch_dataset.OpenDiffractionTorchDataset`.
+> - **Fully Dispatched Physics (F1 - F6)**: Forward models F1 through F6 with full physical unit propagation (Fresnel He-Ne 632.8 nm, polychromatic pink beam with exact $1/s^2$ flux conservation, and 3D Born projections).
+> - **Strict Information Barrier**: `intensity_observed` with zero unmasked pixel leakage and clean ground-truth targets.
+> - **Exact Phase Retrieval Benchmarks**: Analytical Fourier projection verification and subpixel Fourier-shift registration resolving 180° twin ambiguities ($SSIM > 0.90$).
+> - **Bifurcated Hit Finding (T4A & T4B)**: Formal distinction between binary hit screening (T4A) and 4-class physical characterization (T4B) using Patterson autocorrelation satellite ratios and centroid offsets.
+> - **Strict Manifest Validation**: Fail-closed sample verification preventing silent cohort alterations, duplicated sample IDs, and split mismatches.
+> - **Robust Crash Recovery & Bounded Memory**: Fail-closed configuration fingerprinting, persisted SHA-256 integrity manifests, and bounded thread pool execution (<220 MB peak RSS across 1, 2, and 4 workers).
+> - **PyTorch & Kaggle Integration**: Direct PyTorch DataLoader integration and public Kaggle starter notebook.
 
 ---
 
@@ -176,6 +176,7 @@ Pre-packaged YAML configurations are located in `configs/`:
 
 ## Notebooks
 
+- [**Kaggle Starter Notebook**](https://www.kaggle.com/code/hamadmuhammadkamal/opendiffraction-quickstart-eda-phase-retrieval): Interactive quickstart, EDA, and Phase Retrieval runnable directly in the browser on Kaggle.
 - [`notebooks/01_explore_opendiffraction.ipynb`](notebooks/01_explore_opendiffraction.ipynb): Dataset inspection, shard loading, and visualization.
 - [`notebooks/02_phase_retrieval_baseline.ipynb`](notebooks/02_phase_retrieval_baseline.ipynb): Iterative phase retrieval baseline using HIO and Error Reduction.
 
