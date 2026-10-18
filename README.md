@@ -73,6 +73,83 @@ OpenDiffraction produces datasets that are directly compatible with the Deep Pha
   <em>Figure 3: Controlled experimental variation profiles gallery illustrating simulated diffraction measurements across specimen morphologies, partial coherence, beam stops, detector gaps, parasitic scatter, and near-field regimes.</em>
 </p>
 
+<details>
+<summary><b>Click to expand full physical specification table of all 48 Profiles (V01 - V48)...</b></summary>
+
+#### Group 1: Real-World Specimens (V01 - V12)
+| Profile | Name | Model | Physical Description | Benchmark Tasks |
+| :--- | :--- | :---: | :--- | :--- |
+| **V01** | Cell-Like Biological Phantoms | F1 | Projected cell phantom with outer membrane, nucleus, and vesicles. | T1, T6 |
+| **V02** | Virus-Like Particles | F1 | Spherical/shell viral capsid with radial surface spike proteins. | T1, T6, T7 |
+| **V03** | Protein-Complex Aggregates | F1 | Multi-subunit macromolecular cluster with heterogeneous domains. | T1, T6 |
+| **V04** | Core-Shell Nanoparticles | F1 | Concentric spherical nanoparticle with high-Z core and low-Z shell. | T1, T6, T7 |
+| **V05** | Ellipsoidal Nanoparticles | F1 | Anisotropic ellipsoidal particles with variable aspect ratios (1.2 to 3.5). | T1, T6, T7 |
+| **V06** | Nanorods and Nanowires | F1 | High-aspect-ratio 1D nanorods with hemispherical end caps. | T1, T6 |
+| **V07** | Nanoparticle Clusters | F1 | Fractal-like agglomerates of touching spherical nanoparticles. | T1, T6 |
+| **V08** | Porous Materials / Aerogels | F1 | Random spinodal decomposition matrix with interconnected pores. | T1, T6 |
+| **V09** | Colloidal Crystal Assemblies | F1 | Close-packed hexagonal lattice of monodisperse colloidal spheres. | T1, T6 |
+| **V10** | Lithographic Test Patterns | F1 | Orthogonal grating lines, Siemens-star spoke targets, and binary bars. | T1, T6 |
+| **V11** | Defect Structures (Cracks/Voids) | F1 | Continuous matrix containing interior voids and branching micro-cracks. | T1, T6 |
+| **V12** | Multi-Component Mixed Density | F1 | Heterogeneous specimen with mixed low-Z organic and high-Z metallic phases. | T1, T6 |
+
+#### Group 2: Illumination & Coherence (V13 - V20)
+| Profile | Name | Model | Illumination State & Physical Parameters | Benchmark Tasks |
+| :--- | :--- | :---: | :--- | :--- |
+| **V13** | Fully Coherent Plane Wave | F1 | Monochromatic plane wave with infinite transverse coherence length. | T1 |
+| **V14** | Moderate Partial Coherence | F2 | Gaussian Schell-model partial coherence ($\xi = 150\text{ px}$). | T1, T9 |
+| **V15** | Strong Partial Coherence | F2 | Severe partial coherence ($\xi = 40\text{ px}$) blurring high-q speckles. | T1, T9, T11 |
+| **V16** | Focused Curved Wavefront | F3 | Converging spherical wavefront with quadratic phase curvature. | T1, T7, T9 |
+| **V17** | Aberrated Beam (Spherical) | F3 | Fourth-order radial spherical wavefront aberration ($W_{040} r^4$). | T1, T7, T9 |
+| **V18** | Astigmatic Illumination | F3 | Cylindrical wavefront curvature with asymmetric focal lengths. | T1, T7, T9 |
+| **V19** | Pointing Jitter / Wavefront Tilt | F3 | Sub-pixel transverse beam pointing instability and linear phase tilt. | T1, T7, T11 |
+| **V20** | Polychromatic Pink Beam | F5 | Narrow-band synchrotron pink beam ($\Delta E / E = 1.5\%$ FWHM bandwidth). | T1, T9, T12 |
+
+#### Group 3: Detector Realism (V21 - V30)
+| Profile | Name | Model | Detector Characteristics & Noise Models | Benchmark Tasks |
+| :--- | :--- | :---: | :--- | :--- |
+| **V21** | Ideal Noise-Free Detector | F1 | Quantum efficiency 100%, zero dark noise, infinite dynamic range. | T1 |
+| **V22** | Pure Poisson Shot Noise | F1 | Quantum photon counting statistics with shot noise variance. | T1, T2 |
+| **V23** | Mixed Poisson-Gaussian Noise | F1 | Poisson photon statistics combined with Gaussian readout noise ($\sigma = 1.2\text{ e}^-$). | T1, T2 |
+| **V24** | Severe Readout Noise | F1 | High electronic noise ($\sigma = 2.5\text{ e}^-$) obscuring faint speckles. | T1, T2, T11 |
+| **V25** | Central Circular Beam Stop | F1 | Centered beam stop ($16\times 16\text{ px}$) blocking direct transmission. | T1, T3 |
+| **V26** | Beam Stop with Support Arm | F1 | Circular beam stop supported by a diagonal shadow arm to detector edge. | T1, T3 |
+| **V27** | Multi-Panel Module Gaps | F1 | Inactive horizontal and vertical inter-module gaps ($4\text{ px}$ dead stripes). | T1, T3 |
+| **V28** | Dead and Hot Pixel Defects | F1 | Random non-responsive dead pixels ($0.2\%$) and saturated hot pixel clusters. | T1, T3, T5 |
+| **V29** | Full-Well Saturation | F1 | Sensor dynamic range clipping at full-well capacity ($10^4\text{ photons/pixel}$). | T1, T3, T7 |
+| **V30** | Combined Realistic Detector | F1 | Simultaneous Poisson noise, readout noise, beam stop, arm, gaps, and dead pixels. | T1, T2, T3, T5, T11 |
+
+#### Group 4: Background & Parasitic Scattering (V31 - V36)
+| Profile | Name | Model | Parasitic Scattering Phenomenon | Benchmark Tasks |
+| :--- | :--- | :---: | :--- | :--- |
+| **V31** | Background-Free Vacuum | F1 | Ultra-high vacuum condition with zero residual gas or window scatter. | T1 |
+| **V32** | Diffuse Gas Scattering | F1 | Isotropic low-q Lorentzian background from residual chamber gas. | T1, T2 |
+| **V33** | Support Membrane Halo | F1 | Diffuse amorphous halo from silicon nitride or carbon support film. | T1, T2 |
+| **V34** | Solvent / Water Ring | F1 | Wide-angle diffuse scattering ring from liquid jet carrier solvent ($\sim 3.0\text{ nm}^{-1}$). | T1, T2, T7 |
+| **V35** | Aperture Slit Streaks | F1 | Intense orthogonal parasitic flare streaks from beam-defining slit edges. | T1, T2, T3 |
+| **V36** | Cosmic Ray Event Artifacts | F1 | High-energy muon or energetic particle ionization trail crossing multiple pixels. | T1, T2, T5 |
+
+#### Group 5: Acquisition & Hit Finding (V37 - V42)
+| Profile | Name | Model | Beam-Sample Interaction State | Benchmark Tasks |
+| :--- | :--- | :---: | :--- | :--- |
+| **V37** | High-Flux Hit | F1 | Optimal intersection with high incident photon flux ($10^7\text{ photons/pulse}$). | T1, T4 |
+| **V38** | Photon-Starved Hit | F1 | Faint single-particle hit at low flux ($5\times 10^4\text{ photons/pulse}$). | T1, T4 |
+| **V39** | Centered Beam Intersection | F1 | Target specimen centered on optical beam axis with symmetric diffraction. | T1, T4 |
+| **V40** | Off-Center Intersection | F1 | Specimen displaced $5\text{ to }15\text{ px}$ from beam center, causing phase ramps. | T1, T4 |
+| **V41** | Multi-Particle Collision | F1 | Two or three distinct specimens simultaneously illuminated in the focus volume. | T1, T4, T6 |
+| **V42** | Empty Jet Non-Hit | F1 | Beamshot through vacuum or carrier fluid with no specimen present (pure noise). | T4 |
+
+#### Group 6: Advanced Physics & Out-of-Distribution (V43 - V48)
+| Profile | Name | Model | Physical Regime & Challenge | OOD Status | Benchmark Tasks |
+| :--- | :--- | :---: | :--- | :---: | :--- |
+| **V43** | Weak Phase Specimen | F1 | Thin biological specimen with uniform transmission and subtle phase shifts ($<0.5\text{ rad}$). | **OOD** | T1, T8 |
+| **V44** | Strong Complex Object | F1 | Coupled strong amplitude attenuation and spatial optical vortex phase winding. | **OOD** | T1, T8, T12 |
+| **V45** | Near-Field Fresnel Regime | F4 | Angular Spectrum Method (ASM) near-field wave propagation (Fresnel number $N_F \approx 2.0$). | **OOD** | T1, T8, T9 |
+| **V46** | Broadband Polychromatic | F5 | Wide-bandwidth pink beam ($\Delta E / E = 8.0\%$) with flux-conserving radial diffraction smearing. | **OOD** | T1, T8, T9, T12 |
+| **V47** | 3D Particle Euler Scattering | F6 | 3D voxel density rotated at arbitrary Euler angles $(\alpha, \beta, \gamma)$ via Fourier Slice Theorem. | In-Dist | T1, T6, T7 |
+| **V48** | Compound Adversarial Stress Test | F1 | Multi-distortion stress test: low flux, partial coherence, slit flare, gaps, and translation. | **OOD** | T1, T8, T9, T11 |
+
+</details>
+
 <p align="center">
   <img src="assets/figure_2_specimens.png" width="95%" alt="Synthetic Specimen Morphologies">
 </p>
