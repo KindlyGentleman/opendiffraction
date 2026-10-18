@@ -251,6 +251,7 @@ class OpenDiffractionTorchDataset(Dataset):
                 "sample_id": rec.get("sample_id", f"sample_{idx}"),
                 "input": inp_t,
                 "target": task_target_t,
+                "hit_status": rec.get("hit_status", "single_hit"),
                 "mask": msk_t,
                 "split": rec.get("split", ""),
                 "profile_id": rec.get("profile_id", ""),
