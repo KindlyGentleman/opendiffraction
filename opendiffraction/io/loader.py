@@ -15,16 +15,18 @@ class DiffractionSample:
     """A single loaded diffraction sample."""
 
     sample_id: str
-    input: np.ndarray  # (1, 512, 512) float32 unmasked detector readout
+    input: np.ndarray  # (1, 512, 512) float32 strictly masked detector observation
     target: np.ndarray  # (1, 64, 64) float32 DPR scaled object
     mask: np.ndarray  # (1, 512, 512) bool valid pixel mask
-    object_amplitude: np.ndarray  # (1, 64, 64) float32 unscaled true amplitude
-    intensity_ideal: np.ndarray  # (1, 512, 512) float32 coherent intensity
-    intensity_expected: np.ndarray  # (1, 512, 512) float32 expected photon rate
-    intensity_measured: np.ndarray  # (1, 512, 512) float32 signed readout
+    object_amplitude: np.ndarray | None  # (1, 64, 64) float32 unscaled true amplitude if extended
+    intensity_ideal: np.ndarray | None  # (1, 512, 512) float32 coherent intensity if extended
+    intensity_expected: np.ndarray | None  # (1, 512, 512) float32 expected photon rate if extended
+    intensity_measured: np.ndarray  # (1, 512, 512) float32 observed readout
     valid_mask: np.ndarray  # (1, 512, 512) bool valid pixel mask
     object_phase: np.ndarray | None  # (1, 64, 64) float32 or None
     metadata: dict[str, Any]
+    intensity_raw: np.ndarray | None = None  # (1, 512, 512) float32 unmasked readout if extended
+    intensity_observed: np.ndarray | None = None  # (1, 512, 512) float32 strictly masked observation
 
 
 class OpenDiffractionDataset:
@@ -35,13 +37,31 @@ class OpenDiffractionDataset:
         dataset_dir: str,
         split: str | None = None,
         variation: str | None = None,
+        manifest_path: str | None = None,
     ) -> None:
         self.dataset_dir = os.path.abspath(dataset_dir)
         self.data_dir = os.path.join(self.dataset_dir, "data")
         self.metadata_csv = os.path.join(self.dataset_dir, "metadata.csv")
+        self.manifest_path = manifest_path
+
+        # Build sample_id -> metadata mapping if metadata.csv exists
+        self._meta_by_id: dict[str, dict[str, Any]] = {}
+        if os.path.exists(self.metadata_csv):
+            with open(self.metadata_csv, "r", encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    sid = r.get("sample_id")
+                    if sid:
+                        self._meta_by_id[sid] = r
 
         self.records: list[dict[str, Any]] = []
-        if os.path.exists(self.metadata_csv):
+        if self.manifest_path and os.path.exists(self.manifest_path):
+            with open(self.manifest_path, "r", encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    sid = r.get("sample_id")
+                    if not r.get("shard_name") and sid in self._meta_by_id:
+                        r = dict(self._meta_by_id[sid], **r)
+                    self.records.append(r)
+        elif os.path.exists(self.metadata_csv):
             with open(self.metadata_csv, "r", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for r in reader:
@@ -86,11 +106,13 @@ class OpenDiffractionDataset:
             inp = f["input"][row]
             tgt = f["target"][row]
             msk = f["mask"][row]
-            obj_amp = f["object_amplitude"][row]
-            i_ideal = f["intensity_ideal"][row]
-            i_exp = f["intensity_expected"][row]
-            i_meas = f["intensity_measured"][row]
-            v_msk = f["valid_mask"][row]
+            obj_amp = f["object_amplitude"][row] if "object_amplitude" in f else None
+            i_ideal = f["intensity_ideal"][row] if "intensity_ideal" in f else None
+            i_exp = f["intensity_expected"][row] if "intensity_expected" in f else None
+            i_raw = f["intensity_raw"][row] if "intensity_raw" in f else None
+            i_obs = f["intensity_observed"][row] if "intensity_observed" in f else inp
+            i_meas = f["intensity_measured"][row] if "intensity_measured" in f else inp
+            v_msk = f["valid_mask"][row] if "valid_mask" in f else msk
             obj_phase = f["object_phase"][row] if "object_phase" in f else None
 
         return DiffractionSample(
@@ -105,4 +127,13 @@ class OpenDiffractionDataset:
             valid_mask=v_msk,
             object_phase=obj_phase,
             metadata=rec,
+            intensity_raw=i_raw,
+            intensity_observed=i_obs,
         )
+
+    def get_by_sample_id(self, sample_id: str) -> DiffractionSample:
+        """Retrieve a specific sample by unique sample_id."""
+        for idx, rec in enumerate(self.records):
+            if rec.get("sample_id") == sample_id:
+                return self[idx]
+        raise KeyError(f"Sample ID '{sample_id}' not found in dataset index.")

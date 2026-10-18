@@ -33,15 +33,26 @@ def run_inpainting_benchmark(
     if num_samples is not None and len(df_val) > num_samples:
         df_val = df_val.head(num_samples)
 
-    ds = OpenDiffractionTorchDataset(dataset_dir, split="valid", task="inpainting", return_dict=True)
+    ds = OpenDiffractionTorchDataset(
+        dataset_dir, split=None, task="inpainting", return_dict=True, manifest_path=manifest_path
+    )
 
     mae_masked_list = []
     psnr_list = []
     ssim_list = []
 
     t0 = time.time()
-    for idx in range(min(len(df_val), len(ds))):
-        sample = ds[idx]
+    for idx, row in df_val.iterrows():
+        sid = str(row.get("sample_id", ""))
+        if sid and hasattr(ds, "get_by_sample_id"):
+            try:
+                sample = ds.get_by_sample_id(sid)
+            except KeyError:
+                continue
+        else:
+            if idx >= len(ds):
+                break
+            sample = ds[idx]
         masked_inp = sample["input"][0].numpy()  # (512, 512)
         target = sample["target"][0].numpy()  # unmasked expected intensity
         mask = sample["mask"][0].numpy().astype(bool)  # (512, 512)

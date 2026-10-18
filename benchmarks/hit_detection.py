@@ -10,26 +10,16 @@ def classify_hit(
     intensity: np.ndarray,
     energy_threshold: float = 1e4,
     peak_threshold: float = 50.0,
+    noise_sigma: float = 0.5,
 ) -> dict[str, Any]:
     """Classify frame into hit vs non-hit based on integrated photon energy and peak Bragg intensity.
 
-    Parameters
-    ----------
-    intensity : np.ndarray
-        Diffraction pattern (512, 512).
-    energy_threshold : float
-        Minimum total integrated intensity above noise background.
-    peak_threshold : float
-        Minimum single-pixel peak readout.
-
-    Returns
-    -------
-    dict
-        Classification label ('hit' or 'non_hit'), confidence score, and metrics.
+    Gates readout noise floor (3 * noise_sigma) so zero-mean Gaussian readouts do not integrate to false signal.
     """
-    pos = np.maximum(intensity, 0.0)
-    total_energy = float(np.sum(pos))
-    peak_val = float(np.max(pos))
+    threshold = 3.0 * noise_sigma
+    signal_mask = intensity > threshold
+    total_energy = float(np.sum(intensity[signal_mask])) if np.any(signal_mask) else 0.0
+    peak_val = float(np.max(intensity)) if intensity.size > 0 else 0.0
 
     is_hit = (total_energy >= energy_threshold) and (peak_val >= peak_threshold)
 

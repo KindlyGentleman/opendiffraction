@@ -53,6 +53,8 @@ class OpenDiffractionTorchDataset(Dataset):
         family: str | None = None,
         variation: str | None = None,
         return_dict: bool = False,
+        self_supervised: bool = False,
+        manifest_path: str | None = None,
     ) -> None:
         if not HAS_TORCH:
             raise ImportError(
@@ -69,6 +71,8 @@ class OpenDiffractionTorchDataset(Dataset):
         self.family = family
         self.variation = variation
         self.return_dict = return_dict
+        self.self_supervised = self_supervised
+        self.manifest_path = os.path.abspath(manifest_path) if manifest_path else None
 
         self.data_dir = os.path.join(self.root, "data")
         self.metadata_csv = os.path.join(self.root, "metadata.csv")
@@ -81,8 +85,23 @@ class OpenDiffractionTorchDataset(Dataset):
         self._load_index()
 
     def _load_index(self) -> None:
-        """Load and filter sample records from metadata.csv or data directory."""
+        """Load and filter sample records from manifest_path, metadata.csv, or data directory."""
+        meta_by_id: dict[str, dict[str, Any]] = {}
         if os.path.exists(self.metadata_csv):
+            with open(self.metadata_csv, "r", encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    sid = r.get("sample_id")
+                    if sid:
+                        meta_by_id[sid] = r
+
+        if self.manifest_path and os.path.exists(self.manifest_path):
+            with open(self.manifest_path, "r", encoding="utf-8") as f:
+                for r in csv.DictReader(f):
+                    sid = r.get("sample_id")
+                    if not r.get("shard_name") and sid in meta_by_id:
+                        r = dict(meta_by_id[sid], **r)
+                    self.records.append(r)
+        elif os.path.exists(self.metadata_csv):
             with open(self.metadata_csv, "r", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for r in reader:
@@ -112,6 +131,20 @@ class OpenDiffractionTorchDataset(Dataset):
                             "split": sp,
                         }
                     )
+        self._sample_id_to_idx = {
+            r.get("sample_id"): i for i, r in enumerate(self.records) if r.get("sample_id")
+        }
+
+    def get_by_sample_id(self, sample_id: str) -> Any:
+        """Retrieve a specific sample by unique sample_id."""
+        if not hasattr(self, "_sample_id_to_idx") or self._sample_id_to_idx is None:
+            self._sample_id_to_idx = {
+                r.get("sample_id"): i for i, r in enumerate(self.records) if r.get("sample_id")
+            }
+        idx = self._sample_id_to_idx.get(sample_id)
+        if idx is None:
+            raise KeyError(f"Sample ID '{sample_id}' not found in dataset manifest or index.")
+        return self[idx]
 
     def _get_file_handle(self, shard_path: str) -> h5py.File:
         """Safely retrieve or open an HDF5 file handle for the current worker process."""
@@ -177,14 +210,34 @@ class OpenDiffractionTorchDataset(Dataset):
                 clean_arr = h5_file["intensity_expected"][row]
             elif "intensity_ideal" in h5_file:
                 clean_arr = h5_file["intensity_ideal"][row]
-            else:
+            elif self.self_supervised:
                 clean_arr = inp_arr
+            else:
+                raise KeyError(
+                    f"Supervised task '{self.task}' requires clean ground-truth targets "
+                    "('intensity_expected' or 'intensity_ideal'), but shard "
+                    f"'{rec['shard_name']}' was generated without them. "
+                    "Use an extended scientific dataset, companion target shards, or explicitly "
+                    "specify self_supervised=True."
+                )
             task_target_t = torch.from_numpy(clean_arr)
         elif self.task == "inpainting":
             if "intensity_expected" in h5_file:
                 clean_arr = h5_file["intensity_expected"][row]
-            else:
+            elif "intensity_ideal" in h5_file:
+                clean_arr = h5_file["intensity_ideal"][row]
+            elif "intensity_raw" in h5_file:
+                clean_arr = h5_file["intensity_raw"][row]
+            elif self.self_supervised:
                 clean_arr = inp_arr
+            else:
+                raise KeyError(
+                    f"Supervised task '{self.task}' requires unmasked ground-truth targets "
+                    "('intensity_expected', 'intensity_ideal', or 'intensity_raw'), but shard "
+                    f"'{rec['shard_name']}' was generated without them. "
+                    "Use an extended scientific dataset, companion target shards, or explicitly "
+                    "specify self_supervised=True."
+                )
             task_target_t = torch.from_numpy(clean_arr)
         elif self.task == "hit_classification":
             hit_str = rec.get("hit_status", "single_hit")

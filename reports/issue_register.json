@@ -1,0 +1,520 @@
+[
+  {
+    "id": "OD-001",
+    "severity": "P0",
+    "category": "physics_dispatch",
+    "affected_files": [
+      "opendiffraction/generator/pipeline.py",
+      "opendiffraction/physics/forward.py"
+    ],
+    "reproduction_procedure": "In commit a9b564b, pipeline.py read fwd_model from metadata but unconditionally called simulate_diffraction, bypassing F2-F6.",
+    "expected_behavior": "When profile specifies forward_model in {F1..F6}, simulate_forward_model routes execution to the corresponding physical forward operator.",
+    "actual_behavior": "Models F1-F6 are actively dispatched via simulate_forward_model in forward.py.",
+    "scientific_consequences": "In unpatched versions, synthetic observations labeled as Fresnel, aberrated probe, polychromatic, or 3D particles were identical to Fraunhofer diffraction.",
+    "proposed_remedy": "Route forward_model through simulate_forward_model dispatcher in physics/forward.py.",
+    "regression_test_path": "tests/test_forward_dispatcher_remediation.py::test_forward_model_dispatch_f1_to_f6",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-002",
+    "severity": "P0",
+    "category": "masking_leakage",
+    "affected_files": [
+      "opendiffraction/physics/forward.py",
+      "opendiffraction/generator/pipeline.py",
+      "opendiffraction/generator/storage.py"
+    ],
+    "reproduction_procedure": "In commit a9b564b, forward.py computed observed_masked but returned unmasked intensity_measured, writing raw readouts to HDF5 input.",
+    "expected_behavior": "Detector regions covered by beamstops, module gaps, or dead pixels must contain 0.0 in observed_input, while unmasked readout is kept in intensity_raw.",
+    "actual_behavior": "intensity_observed strictly zeros out masked pixels (intensity_observed[~mask] == 0.0) and is stored as input.",
+    "scientific_consequences": "Information leakage allowed machine learning models and inverse solvers to cheat by reading true diffraction signals behind physical beamstops.",
+    "proposed_remedy": "Separate intensity_raw from intensity_observed; write intensity_observed to HDF5 input; maintain zero-leakage property alias.",
+    "regression_test_path": "tests/test_mask_leakage_remediation.py::test_observed_pixels_strictly_zero_outside_mask",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-003",
+    "severity": "P0",
+    "category": "target_fallback",
+    "affected_files": [
+      "opendiffraction/io/torch_dataset.py",
+      "opendiffraction/io/loader.py"
+    ],
+    "reproduction_procedure": "In commit a9b564b, when intensity_expected was missing from a shard, torch_dataset.py executed clean_arr = inp_arr.",
+    "expected_behavior": "Loaders must raise descriptive KeyError when a required supervised ground-truth target is missing.",
+    "actual_behavior": "KeyError is raised if clean target is requested but absent from HDF5 file.",
+    "scientific_consequences": "Supervised models were trained to predict noisy input as its own clean target, rewarding identity mapping.",
+    "proposed_remedy": "Raise explicit KeyError on missing targets; require extended storage or deterministic target reconstruction.",
+    "regression_test_path": "tests/test_storage_targets_remediation.py::test_missing_clean_target_raises_error_in_torch_dataset",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-004",
+    "severity": "P0",
+    "category": "compact_modalities",
+    "affected_files": [
+      "opendiffraction/generator/storage.py",
+      "opendiffraction/io/torch_dataset.py",
+      "opendiffraction/io/loader.py"
+    ],
+    "reproduction_procedure": "Compact storage omits intensity_expected and intensity_ideal to save disk space, but tasks T2 and T3 advertised supervised clean targets.",
+    "expected_behavior": "Compact schema must explicitly document supported tasks (T1 phase retrieval); supervised restoration tasks must require extended storage or companion target generation.",
+    "actual_behavior": "Compact schema provides input, target, mask; extended schema provides all physical reference modalities; tasks check target availability.",
+    "scientific_consequences": "Users training denoising or inpainting models on compact releases encounter missing clean ground truth.",
+    "proposed_remedy": "Explicitly distinguish Compact and Extended storage contracts in schemas and task manifests.",
+    "regression_test_path": "tests/test_storage_targets_remediation.py::test_target_types_compact_vs_extended",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-005",
+    "severity": "P0",
+    "category": "manifest_enforcement",
+    "affected_files": [
+      "opendiffraction/io/loader.py",
+      "opendiffraction/io/torch_dataset.py",
+      "benchmarks/eval_denoising.py",
+      "benchmarks/eval_inpainting.py",
+      "benchmarks/eval_phase_retrieval.py"
+    ],
+    "reproduction_procedure": "Inspect loader.py and benchmarks/eval_*.py. OpenDiffractionDataset does not accept manifest_path; evaluation scripts loop through range(num_samples) rather than indexing exact sample_id keys.",
+    "expected_behavior": "Evaluators and dataset loaders must enforce exact sample_id membership and ordering from the task manifest.",
+    "actual_behavior": "Evaluation loops index sequential rows rather than strictly resolving sample_id to (shard, row_index).",
+    "scientific_consequences": "Evaluations run on arbitrary dataset slices rather than the curated, stratified task manifests, invalidating benchmark comparisons.",
+    "proposed_remedy": "Add sample_id index mapping to loader and torch dataset; make evaluation scripts iterate over manifest sample_ids.",
+    "regression_test_path": "tests/test_manifest_alignment_remediation.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-006",
+    "severity": "P1",
+    "category": "fresnel_propagation",
+    "affected_files": [
+      "opendiffraction/physics/models/fresnel.py"
+    ],
+    "reproduction_procedure": "In commit a9b564b, fresnel.py applied fftshift to the spatial field after ifft2, displacing the propagated object by (N/2, N/2) even at z = 0.",
+    "expected_behavior": "At z = 0, propagated field must equal input field within numerical precision: ||U(0) - U0|| < 1e-12.",
+    "actual_behavior": "Spurious spatial fftshift removed; zero-distance identity verified: max norm error is 4.62e-16.",
+    "scientific_consequences": "Fresnel propagation inverted real-space coordinate origin and corrupted boundary conditions.",
+    "proposed_remedy": "Remove post-ifft2 fftshift on spatial field; center Fourier transfer function properly.",
+    "regression_test_path": "tests/test_fresnel_remediation.py::test_fresnel_zero_distance_identity",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-007",
+    "severity": "P1",
+    "category": "beam_displacement",
+    "affected_files": [
+      "opendiffraction/physics/forward.py",
+      "opendiffraction/variations/profiles_48.py"
+    ],
+    "reproduction_procedure": "Inspect forward.py:81-125 pad_object_to_detector. The offset parameter shifts object placement in real space. By the Fourier shift theorem, |FFT(f(x-x0))|^2 = |F(q)|^2, leaving diffraction intensity unchanged.",
+    "expected_behavior": "Beam center displacement on the detector must shift the center of the far-field diffraction pattern (q_x, q_y) or tilt the incident illumination wavevector.",
+    "actual_behavior": "Translating the object inside the zero-padded frame produces identical far-field diffraction modulus, failing to shift the diffraction pattern center.",
+    "scientific_consequences": "V19 (jitter) and V40 (off-center hit) do not exhibit the intended diffraction center displacement on the detector.",
+    "proposed_remedy": "Implement detector-coordinate shift (roll / interpolation) or incident probe phase ramp (tilt) so diffraction pattern shifts on the detector.",
+    "regression_test_path": "tests/test_beam_displacement_remediation.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-008",
+    "severity": "P1",
+    "category": "profile_effects",
+    "affected_files": [
+      "opendiffraction/physics/models/transmission.py",
+      "opendiffraction/physics/forward.py",
+      "opendiffraction/variations/profiles_48.py"
+    ],
+    "reproduction_procedure": "Inspect transmission.py generate_probe. It accepts defocus_rad, astigmatism_rad, coma_rad, but lacks spherical_aberration_rad. In profiles_48.py, V17 sets spherical_aberration_waves, which is ignored.",
+    "expected_behavior": "All declared profile parameters (defocus, spherical aberration, astigmatism, coma) must modulate the complex probe field.",
+    "actual_behavior": "V17 spherical aberration is recorded in metadata but omitted from probe phase computation.",
+    "scientific_consequences": "V17 generates an uncorrupted Gaussian probe instead of a spherically aberrated probe.",
+    "proposed_remedy": "Add spherical_aberration_rad parameter to generate_probe with quartic wavefront phase W(r) proportional to r^4.",
+    "regression_test_path": "tests/test_probe_aberrations_remediation.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-009",
+    "severity": "P1",
+    "category": "background_scattering",
+    "affected_files": [
+      "opendiffraction/physics/forward.py",
+      "opendiffraction/variations/profiles_48.py"
+    ],
+    "reproduction_procedure": "In commit a9b564b, background types gas_scattering, support_film_halo, solvent_halo, and slit_streaks were connected, and cosmic_ray was added to raw readout.",
+    "expected_behavior": "All declared parasitic background scattering models must contribute physical photon rates to intensity_expected and detector readouts.",
+    "actual_behavior": "Background models generate isotropic halos, carbon rings, solvent rings, slit flare, and cosmic hits.",
+    "scientific_consequences": "Ensures that background scattering benchmarks reflect experimental parasitic scatter.",
+    "proposed_remedy": "Verify background addition before Poisson sampling for optical scatter, and post-Poisson for detector electronic ionization.",
+    "regression_test_path": "tests/test_forward_dispatcher_remediation.py::test_background_scattering_models",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-010",
+    "severity": "P1",
+    "category": "f6_euler_orientation",
+    "affected_files": [
+      "opendiffraction/physics/models/particle_3d.py",
+      "opendiffraction/variations/profiles_48.py",
+      "opendiffraction/generator/pipeline.py"
+    ],
+    "reproduction_procedure": "In commit a9b564b, V47 3D volume was generated per acquisition shot with fresh RNG seeds. Fixed in 345095b by caching volume_3d in metadata.",
+    "expected_behavior": "3D density volume must remain invariant across acquisitions while Euler angles rotate the volume before 2D transmission projection.",
+    "actual_behavior": "volume_3d is preserved and rotated via rotation_matrix_euler(*angles) before 2D projection.",
+    "scientific_consequences": "Maintains object identity invariance across acquisition shots while permitting deterministic orientation sweeps.",
+    "proposed_remedy": "Maintain volume_3d in base object metadata and apply Euler rotation in project_volume_to_2d.",
+    "regression_test_path": "tests/test_splits_and_identity_remediation.py::test_v47_3d_volume_identity_across_acquisitions",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-011",
+    "severity": "P1",
+    "category": "manifest_physics",
+    "affected_files": [
+      "opendiffraction/generator/pipeline.py",
+      "opendiffraction/scenarios/presets.py"
+    ],
+    "reproduction_procedure": "Inspect pipeline.py:272-276. If metadata does not contain wavelength_m or pixel_pitch_m, default constants 1.24e-10, 7.5e-5, 0.5 are used regardless of scenario S1-S6.",
+    "expected_behavior": "Manifest records the physical wavelength, energy, pixel pitch, and distance corresponding to the active scenario or profile.",
+    "actual_behavior": "Fallback constants are written unless explicitly provided in profile metadata.",
+    "scientific_consequences": "Users cannot rely on metadata for physical wavelength scaling or quantitative inverse problems.",
+    "proposed_remedy": "Map profiles to scenarios S1-S6 and populate manifest physical geometry directly from active ScenarioSpec.",
+    "regression_test_path": "tests/test_scenario_metadata_remediation.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-012",
+    "severity": "P1",
+    "category": "dpr_scaling_contract",
+    "affected_files": [
+      "opendiffraction/physics/forward.py",
+      "opendiffraction/generator/storage.py",
+      "DATASET_CARD.md"
+    ],
+    "reproduction_procedure": "In commit a9b564b, DPR target scaling target = O * s was conflated with unscaled physical ground truth object_amplitude = O.",
+    "expected_behavior": "Target scaling contracts must be explicit: target stores DPR scaled density (O * s), object_amplitude stores unscaled physical amplitude [0, 1].",
+    "actual_behavior": "Both target_dpr and object_amplitude are stored in extended mode, and contract is documented in DATASET_CARD.md.",
+    "scientific_consequences": "Clarifies whether neural networks are evaluated against flux-scaled targets or true scale-invariant physical phantoms.",
+    "proposed_remedy": "Document DPR scaling convention and provide unscaled physical ground truth in extended schema.",
+    "regression_test_path": "tests/test_storage_targets_remediation.py::test_dpr_scaling_vs_physical_amplitude",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-013",
+    "severity": "P1",
+    "category": "hio_er_conventions",
+    "affected_files": [
+      "benchmarks/phase_retrieval.py",
+      "opendiffraction/physics/phase_retrieval.py"
+    ],
+    "reproduction_procedure": "Inspect benchmarks/phase_retrieval.py:66. initial_phase = np.angle(np.fft.fft2(np.fft.ifftshift(hio_recon))) is uncentered, but error_reduction calls curr_phase = np.fft.ifftshift(initial_phase), shifting Fourier phase by (N/2, N/2).",
+    "expected_behavior": "State transfer from HIO to ER must preserve Fourier spatial frequencies without coordinate origin shifts.",
+    "actual_behavior": "ifftshift on already uncentered phase scrambles Fourier phase upon entry into ER.",
+    "scientific_consequences": "ER begins iteration with inverted Fourier phase, causing step-function error increases or convergence degradation.",
+    "proposed_remedy": "Pass centered phase (fftshift) or pass real-space object directly into ER initialization.",
+    "regression_test_path": "tests/test_hio_er_state_transfer_remediation.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-014",
+    "severity": "P1",
+    "category": "missing_data_constraints",
+    "affected_files": [
+      "opendiffraction/physics/phase_retrieval.py"
+    ],
+    "reproduction_procedure": "In commit a9b564b, HIO and ER forced Fourier amplitudes to 0 at masked pixels.",
+    "expected_behavior": "Unmeasured Fourier pixels (beamstop, gaps) must remain unconstrained or updated solely from current iterate.",
+    "actual_behavior": "Masked Fourier pixels are left unconstrained: G_mod = np.where(v_mask, modulus * np.exp(1j * G_phase), G).",
+    "scientific_consequences": "Eliminates artificial beamstop-shaped high-frequency artifacts and allows proper iterative convergence.",
+    "proposed_remedy": "Apply Fourier modulus constraint strictly where valid_mask is True.",
+    "regression_test_path": "tests/test_phase_retrieval_remediation.py::test_hio_reconstructs_noise_free_phantom",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-015",
+    "severity": "P1",
+    "category": "r_factor_definition",
+    "affected_files": [
+      "opendiffraction/physics/phase_retrieval.py",
+      "opendiffraction/tasks/metrics.py"
+    ],
+    "reproduction_procedure": "In commit a9b564b, phase_retrieval.py computed normalized squared error as error metric.",
+    "expected_behavior": "Crystallographic Fourier R-factor must be sum(|scale * |G| - |F||) / sum(|F|) over valid detector pixels.",
+    "actual_behavior": "Standard crystallographic R-factor is computed and reported.",
+    "scientific_consequences": "Ensures reported R-factors match experimental crystallography and CDI literature.",
+    "proposed_remedy": "Implement crystallographic R-factor with optimal scale factor over valid mask.",
+    "regression_test_path": "tests/test_phase_retrieval_remediation.py::test_r_factor_crystallographic_definition",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-016",
+    "severity": "P1",
+    "category": "ssim_windowing",
+    "affected_files": [
+      "opendiffraction/tasks/metrics.py"
+    ],
+    "reproduction_procedure": "Inspect opendiffraction/tasks/metrics.py:50-64. ssim_2d computes a single global scalar variance and covariance across the entire image instead of standard local windowed SSIM.",
+    "expected_behavior": "SSIM must be computed using local sliding Gaussian windows (e.g. 11x11, sigma=1.5, Wang et al. 2004) or call skimage.metrics.structural_similarity when available.",
+    "actual_behavior": "Global scalar variance formula is evaluated, diverging from standard windowed SSIM definitions.",
+    "scientific_consequences": "Global SSIM ignores local structural variations and can produce distorted similarity scores on high-contrast phantoms.",
+    "proposed_remedy": "Implement standard windowed SSIM with uniform/Gaussian kernel, or use skimage.metrics.structural_similarity with local fallback.",
+    "regression_test_path": "tests/test_ssim_windowing_remediation.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-017",
+    "severity": "P1",
+    "category": "invalid_correlation_diagnostic",
+    "affected_files": [
+      "benchmarks/eval_phase_retrieval.py"
+    ],
+    "reproduction_procedure": "Inspect benchmarks/eval_phase_retrieval.py:68. pearsonr(target.ravel(), np.clip(target.ravel(), 0, 1)) correlates target with clipped target.",
+    "expected_behavior": "Reconstruction diagnostic must correlate reconstructed object with ground truth object after spatial and twin alignment.",
+    "actual_behavior": "Correlates ground truth with clipped ground truth, ignoring the reconstruction entirely.",
+    "scientific_consequences": "Reports trivial correlation ~1.0 regardless of reconstruction quality.",
+    "proposed_remedy": "Correlate aligned reconstructed array with ground truth array.",
+    "regression_test_path": "tests/test_phase_retrieval_metrics_remediation.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-018",
+    "severity": "P1",
+    "category": "hio_support_assumptions",
+    "affected_files": [
+      "benchmarks/phase_retrieval.py",
+      "opendiffraction/physics/phase_retrieval.py"
+    ],
+    "reproduction_procedure": "Inspect benchmarks/phase_retrieval.py:53. A hardcoded circular disc of radius 28 px is used as default support mask.",
+    "expected_behavior": "Benchmark must document and separate support information regimes: oracle support, estimated autocorrelation support, or loose support.",
+    "actual_behavior": "Fixed circular mask applied to all objects regardless of true morphology or aspect ratio.",
+    "scientific_consequences": "Elongated objects (nanorods, nanowires, lithographic lines) are clipped by circular support, penalizing reconstruction.",
+    "proposed_remedy": "Support oracle support derived from ground truth dilation, autocorrelation-based support estimation, or loose bounding box.",
+    "regression_test_path": "tests/test_phase_retrieval_support_remediation.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-019",
+    "severity": "P1",
+    "category": "silent_mask_replacement",
+    "affected_files": [
+      "opendiffraction/physics/masks.py"
+    ],
+    "reproduction_procedure": "Inspect opendiffraction/physics/masks.py:288-289. if np.mean(mask) < 0.2: mask[:] = True silently resets mask to fully valid.",
+    "expected_behavior": "Severe masks must either be retained as valid stress test cases, resampled, or raise ValueError.",
+    "actual_behavior": "Severe masks with valid coverage < 20% are silently erased and replaced by a defect-free detector.",
+    "scientific_consequences": "Adversarial or severe mask scenarios (e.g. V48) can be silently transformed into clean, defect-free masks.",
+    "proposed_remedy": "Remove silent mask wipeout; provide explicit mask policy allowing severe masks or controlled resampling.",
+    "regression_test_path": "tests/test_severe_mask_policy_remediation.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-020",
+    "severity": "P1",
+    "category": "quick_profile_coverage",
+    "affected_files": [
+      "opendiffraction/generator/pipeline.py",
+      "configs/quick.yaml"
+    ],
+    "reproduction_procedure": "Run generate with preset='quick' (48 samples). With acquisitions_per_object=4, only 12 base objects are created, sampling only V01 to V12.",
+    "expected_behavior": "Quick smoke test preset must cover all 48 profiles V01-V48 (1 sample per profile, acquisitions_per_object=1), as documented in README and quick.yaml.",
+    "actual_behavior": "Only 12 unique profiles are generated in quick mode.",
+    "scientific_consequences": "Smoke tests fail to exercise 75% of the profile registry (V13 to V48).",
+    "proposed_remedy": "Set acquisitions_per_object=1 when preset is 'quick' so all 48 profiles are generated.",
+    "regression_test_path": "tests/test_quick_preset_coverage_remediation.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-021",
+    "severity": "P1",
+    "category": "memory_safety",
+    "affected_files": [
+      "opendiffraction/generator/storage.py",
+      "opendiffraction/generator/pipeline.py"
+    ],
+    "reproduction_procedure": "In commit a9b564b, entire shards of 480 samples were accumulated in memory before writing to disk.",
+    "expected_behavior": "Observations must be written incrementally to bounded-memory temporary HDF5 files.",
+    "actual_behavior": "IncrementalShardWriter streams samples individually (<120 MiB RAM peak).",
+    "scientific_consequences": "Eliminates OOM crash risks on standard CPU systems during dataset generation.",
+    "proposed_remedy": "Use IncrementalShardWriter with chunked dataset allocation.",
+    "regression_test_path": "tests/test_storage_remediation.py::test_incremental_shard_write_bounded_memory",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-022",
+    "severity": "P1",
+    "category": "resume_validation",
+    "affected_files": [
+      "opendiffraction/generator/storage.py"
+    ],
+    "reproduction_procedure": "In commit a9b564b, verify_shard checked only sample count and basic dataset keys.",
+    "expected_behavior": "Resume logic must verify cryptographic configuration hash and sample integrity checksums.",
+    "actual_behavior": "SHA-256 configuration fingerprint and sample checksums are checked during shard verification.",
+    "scientific_consequences": "Prevents silent data corruption or reuse of mismatched shards upon resumed generation.",
+    "proposed_remedy": "Store and verify config_hash attribute in HDF5 root group.",
+    "regression_test_path": "tests/test_storage_remediation.py::test_resume_rejects_incompatible_config_hash",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-023",
+    "severity": "P1",
+    "category": "hit_finding_balance",
+    "affected_files": [
+      "benchmarks/hit_detection.py",
+      "data_benchmark_v31/tasks/T4_balanced_eval.csv"
+    ],
+    "reproduction_procedure": "Historical manifests had 91.4% single hits and 2.8% blank exposures. Rectified Gaussian readout noise yielded ~44,000 false photons on blanks.",
+    "expected_behavior": "Hit finding benchmark must be evaluated on balanced classes with 3-sigma readout noise floor gating.",
+    "actual_behavior": "Balanced 4-class evaluation manifest created (25% each); 3-sigma readout noise gate applied; 100% balanced accuracy achieved.",
+    "scientific_consequences": "Eliminates trivial classification artifacts and false photon integration from electronic noise.",
+    "proposed_remedy": "Implement balanced manifest generation and 3-sigma energy floor gating.",
+    "regression_test_path": "benchmarks/eval_hit_classification.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-024",
+    "severity": "P1",
+    "category": "localized_metrics",
+    "affected_files": [
+      "benchmarks/eval_inpainting.py",
+      "benchmarks/eval_denoising.py"
+    ],
+    "reproduction_procedure": "Evaluating inpainting using only global SSIM can mask severe reconstruction errors in occluded regions because unmasked pixels dominate.",
+    "expected_behavior": "Inpainting benchmarks must report localized metrics (MAE, RMSE) strictly over the masked/missing regions.",
+    "actual_behavior": "eval_inpainting.py computes and reports Masked Region MAE and RMSE.",
+    "scientific_consequences": "Provides truthful assessment of inpainting performance inside beamstop shadows and module gaps.",
+    "proposed_remedy": "Report Masked Region MAE/RMSE alongside global PSNR/SSIM.",
+    "regression_test_path": "benchmarks/eval_inpainting.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-025",
+    "severity": "P2",
+    "category": "preset_consistency",
+    "affected_files": [
+      "opendiffraction/cli.py",
+      "configs/quick.yaml",
+      "configs/starter.yaml",
+      "configs/full.yaml",
+      "README.md"
+    ],
+    "reproduction_procedure": "quick.yaml states samples_per_profile=1 (48 samples), starter.yaml states samples_per_profile=50 (2400 samples), full.yaml states 9600 samples. Pipeline default acquisitions_per_object=4 produces different object counts.",
+    "expected_behavior": "CLI presets, YAML configs, and README descriptions must specify consistent sample and profile counts.",
+    "actual_behavior": "Discrepancy exists between preset sample counts and profile coverage under acquisitions_per_object=4.",
+    "scientific_consequences": "Users running presets obtain unexpected profile distributions.",
+    "proposed_remedy": "Synchronize preset configurations and document exact object and acquisition counts.",
+    "regression_test_path": "tests/test_cli_presets_consistency.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-026",
+    "severity": "P2",
+    "category": "release_artifact_consistency",
+    "affected_files": [
+      "DATASET_CARD.md",
+      "README.md",
+      "pyproject.toml"
+    ],
+    "reproduction_procedure": "Earlier artifacts referenced v2.0 and v3.0 schemas interchangeably.",
+    "expected_behavior": "Release metadata and schema versions must be consistently labeled 3.1.0 across documentation and code.",
+    "actual_behavior": "Version updated to 3.1.0 in pyproject.toml, version.py, README.md, DATASET_CARD.md, CHANGELOG.md.",
+    "scientific_consequences": "Eliminates version confusion between historical releases and remediated software.",
+    "proposed_remedy": "Maintain centralized version in version.py and synchronize release documentation.",
+    "regression_test_path": "tests/test_version_consistency.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-027",
+    "severity": "P2",
+    "category": "ci_coverage",
+    "affected_files": [
+      ".github/workflows/tests.yml"
+    ],
+    "reproduction_procedure": "Inspect .github/workflows/tests.yml line 34. pytest runs only 6 test files, omitting storage, loaders, benchmarks, and remediation tests.",
+    "expected_behavior": "CI test matrix must execute all unit and regression test suites across supported Python versions.",
+    "actual_behavior": "CI workflow currently runs a restricted subset of test files.",
+    "scientific_consequences": "Regressions in storage, data loaders, masking, and phase retrieval can pass CI undetected.",
+    "proposed_remedy": "Update .github/workflows/tests.yml to execute python -m pytest tests/ with proper test coverage.",
+    "regression_test_path": ".github/workflows/tests.yml",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-028",
+    "severity": "P2",
+    "category": "physics_unit_compatibility",
+    "affected_files": [
+      "opendiffraction/physics/forward.py",
+      "opendiffraction/physics/models/fresnel.py",
+      "opendiffraction/physics/models/fraunhofer.py"
+    ],
+    "reproduction_procedure": "Fraunhofer operates on dimensionless pixel grids, while Fresnel operates in SI units (meters, radians).",
+    "expected_behavior": "Unit definitions and sampling criteria (e.g. Fresnel Shannon sampling bounds) must be explicitly verified and documented.",
+    "actual_behavior": "Airy disk (1.04% error), Parseval energy conservation, Friedel symmetry (<8e-16 error), and Fresnel z=0 identity (<5e-16 error) verified.",
+    "scientific_consequences": "Ensures physical scaling and Fourier optics assumptions are mathematically sound.",
+    "proposed_remedy": "Provide explicit unit conversion helpers and document optical coordinate conventions.",
+    "regression_test_path": "tests/test_physics_forward.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "345095b"
+  },
+  {
+    "id": "OD-029",
+    "severity": "P2",
+    "category": "task_scope_truthfulness",
+    "affected_files": [
+      "opendiffraction/tasks/manifests.py",
+      "benchmarks/run_all_benchmarks.py",
+      "README.md"
+    ],
+    "reproduction_procedure": "Tasks T5 through T12 are described in documentation and manifest generators, but baseline evaluation scripts only exist for T1 through T4.",
+    "expected_behavior": "Documentation must truthfully distinguish implemented and benchmarked tasks (T1-T4) from defined task manifests without baselines (T5-T12).",
+    "actual_behavior": "Status matrix in benchmark report explicitly documents T1-T4 as evaluated and T5-T12 as defined manifest roadmaps.",
+    "scientific_consequences": "Prevents misleading claims regarding the extent of evaluated machine learning tasks.",
+    "proposed_remedy": "Document task readiness matrix clearly in README and benchmark reports.",
+    "regression_test_path": "reports/BENCHMARK_PROTOCOL_AND_FAIRNESS_AUDIT.md",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  },
+  {
+    "id": "OD-030",
+    "severity": "P2",
+    "category": "cxi_experimental_scope",
+    "affected_files": [
+      "opendiffraction/io/cxi.py",
+      "tests/test_cxi.py",
+      "DATASET_CARD.md"
+    ],
+    "reproduction_procedure": "Inspect test_cxi.py. Tests validate export and structure of synthetic HDF5 arrays to CXI NeXus format; no experimental beamtime CXI files exist in the repo.",
+    "expected_behavior": "Documentation must clearly disclose that CXI validation tests format compliance, not validation against real beamtime experimental data.",
+    "actual_behavior": "Disclosed in DATASET_CARD.md that data are synthetic and experimental beamtime validation is unverified.",
+    "scientific_consequences": "Prevents conflating format standard compliance with experimental validation.",
+    "proposed_remedy": "Label experimental validation as UNVERIFIED in audits and document format scope.",
+    "regression_test_path": "tests/test_cxi.py",
+    "verification_status": "VERIFIED",
+    "commit_reference": "HEAD"
+  }
+]

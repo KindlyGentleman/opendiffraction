@@ -1,88 +1,107 @@
-# OpenDiffraction 3.0 Task Management
+# OpenDiffraction Remediation Tasks
 
-## Phase 0: Audit Existing Code and Data
-- [x] Run existing test suite and record baseline results (78 passed, 0 failed, 0 skipped).
-- [x] P0.1: Audit resume implementation and identify interruption vulnerabilities.
-- [x] P0.2: Audit object identity and group data leakage across splits.
-- [x] P0.3: Audit forward physics models, FFT centering, coherence, scaling, and DPR compatibility.
-- [x] P0.4: Audit metadata schemas, configuration fields, and version consistency.
-- [x] Fix critical resume, split, and metadata issues identified in Phase 0.
-- [x] Deliver Phase 0 audit reports:
-  - `reports/V3_BASELINE_AUDIT.md`
-  - `reports/SCIENTIFIC_MODEL_AUDIT.md`
-  - `reports/RESUME_SAFETY_AUDIT.md`
-  - `reports/STORAGE_BASELINE.md`
-- [x] Execute fault-injection resume tests (`scripts/verify_resume.py`: All 3 tests passed).
+Branch: `remediation/v3.1-scientific-audit`
+Target: OpenDiffraction 3.1.0 Master Scientific Remediation
 
-## Phase 1: Large-Scale Synthetic Dataset Generation (1,000 Target)
-- [x] P1.1: Design dataset identity: 250 base objects x 4 diverse acquisitions = 1,000 observations.
-- [x] P1.2: Verify physical model compatibility for supported profiles (F1 to F6).
-- [x] P1.3: Procedural specimen generation across 15 specimen families with recorded seeds.
-- [x] P1.4: Diffraction acquisition condition matrix (flux, partial coherence, masks, noise, background).
-- [x] P1.5: Group-disjoint deterministic splitting (64.4% train, 14.0% val, 11.6% test, 10.0% test_ood).
-- [x] P1.6: Metadata design with typed fields and documented units.
-- [x] P1.7: Staged generation execution:
-  - [x] Stage A: 48 samples (integration smoke test)
-  - [x] Stage B: 480 samples (statistical and compression benchmarks)
-  - [x] Stage C: 1,000 samples (engineering pilot)
-  - [x] Stage D: 1,000 samples (production dataset in `output_v3/`)
-- [x] Deliverables:
-  - `output_v3/` dataset (7 HDF5 shards, 1,000 records, 0.87 GB)
-  - `reports/GENERATION_METRICS.md`
-  - `reports/OBJECT_CATALOG.md`
-  - `reports/ACQUISITION_MATRIX.md`
+## Prioritized Issue Register (OD-001 through OD-030)
 
-## Phase 2: Optimize Storage, Resume, and PyTorch Loading
-- [x] P2.1: Measure storage baseline on representative subsets.
-- [x] P2.2: Benchmark compression filters (gzip-1, gzip-4, lzf, uncompressed).
-- [x] P2.3: Implement compact training and extended scientific storage modes.
-- [x] P2.4: Optimize HDF5 chunk shape, shard size, atomic writes, and manifest verification.
-- [x] P2.5: Preflight resource protection (memory, disk, workers).
-- [x] P2.6: Refactor dataset loader with lazy loading and stable indexing.
-- [x] P2.7: Implement `OpenDiffractionTorchDataset` with safe per-worker lazy file opening and context management.
-- [x] P2.8: Document and implement scientific normalization transforms.
-- [x] Deliverables:
-  - `opendiffraction/io/torch_dataset.py`
-  - `opendiffraction/generator/storage.py`
-  - `scripts/benchmark_storage.py`
-  - `scripts/verify_resume.py`
-  - `reports/STORAGE_OPTIMIZATION.md`
+| ID | Sev | Category | Description | Status |
+|:---:|:---:|:---|:---|:---:|
+| **OD-001** | P0 | physics_dispatch | F1-F6 model labels dispatched through production physics | VERIFIED |
+| **OD-002** | P0 | masking_leakage | Detector input strictly zeroed out behind occlusions | VERIFIED |
+| **OD-003** | P0 | target_fallback | Explicit KeyError when clean supervised targets are missing | VERIFIED |
+| **OD-004** | P0 | compact_modalities | Explicit storage schemas for compact vs extended tasks | VERIFIED |
+| **OD-005** | P0 | manifest_enforcement | Benchmark loaders enforce exact manifest sample_id mapping | VERIFIED |
+| **OD-006** | P1 | fresnel_propagation | Fresnel propagation spatial centering and zero-distance identity | VERIFIED |
+| **OD-007** | P1 | beam_displacement | Beam displacement shifts detector center via wavevector tilt | VERIFIED |
+| **OD-008** | P1 | profile_effects | Profile parameters (spherical aberration, coma) modulate probe | VERIFIED |
+| **OD-009** | P1 | background_scattering | Background halos, flare, and cosmic hits connected to production | VERIFIED |
+| **OD-010** | P1 | f6_euler_orientation | 3D Euler volume rotation invariant across shots | VERIFIED |
+| **OD-011** | P1 | manifest_physics | Geometry metadata synchronized with active scenarios S1-S6 | VERIFIED |
+| **OD-012** | P1 | dpr_scaling_contract | DPR target scaling distinguished from physical amplitude | VERIFIED |
+| **OD-013** | P1 | hio_er_conventions | Fourier coordinate and phase transfer between HIO and ER | VERIFIED |
+| **OD-014** | P1 | missing_data_constraints | Masked Fourier pixels unconstrained during modulus updates | VERIFIED |
+| **OD-015** | P1 | r_factor_definition | Standard crystallographic Fourier R-factor implementation | VERIFIED |
+| **OD-016** | P1 | ssim_windowing | Standard local windowed SSIM vs global scalar SSIM | VERIFIED |
+| **OD-017** | P1 | invalid_correlation | Replace target vs clip(target) with reconstruction correlation | VERIFIED |
+| **OD-018** | P1 | hio_support_assumptions | Separate support information regimes (oracle, loose, estimated) | VERIFIED |
+| **OD-019** | P1 | silent_mask_replacement | Remove silent mask reset when valid coverage < 20% | VERIFIED |
+| **OD-020** | P1 | quick_profile_coverage | Quick preset exercises all 48 profiles (1 per profile) | VERIFIED |
+| **OD-021** | P1 | memory_safety | IncrementalShardWriter streaming (<120 MiB RAM peak) | VERIFIED |
+| **OD-022** | P1 | resume_validation | SHA-256 config hash and sample checksum verification | VERIFIED |
+| **OD-023** | P1 | hit_finding_balance | Balanced 4-class Hit Finding with 3-sigma noise floor gating | VERIFIED |
+| **OD-024** | P1 | localized_metrics | Inpainting evaluated with Masked Region MAE and RMSE | VERIFIED |
+| **OD-025** | P2 | preset_consistency | Harmonize sample counts across CLI, YAML, and README | VERIFIED |
+| **OD-026** | P2 | release_consistency | Version 3.1.0 synchronized across metadata and documentation | VERIFIED |
+| **OD-027** | P2 | ci_coverage | CI executes complete unit and regression test suite | VERIFIED |
+| **OD-028** | P2 | physics_unit_compatibility | Mathematical oracles (Airy, Parseval, Friedel, Fresnel) | VERIFIED |
+| **OD-029** | P2 | task_scope_truthfulness | Truthful scope: T1-T4 benchmarked, T5-T12 manifest roadmaps | VERIFIED |
+| **OD-030** | P2 | cxi_experimental_scope | Explicit disclosure of synthetic format vs real beamtime | VERIFIED |
 
-## Phase 3: Scientific Data Quality and Training-Ready Tasks
-- [x] P3.1: Full structural validation across all 1,000 samples (0 NaN, 0 Inf, zero duplicates).
-- [x] P3.2: Stratified physics validation (Fourier, Parseval, Poisson, coherence, mask integrity).
-- [x] P3.3: Statistical distribution audit.
-- [x] P3.4: Four ML benchmark task manifests (T1 Phase Retrieval, T2 Denoising, T3 Inpainting, T4 Hit Finding).
-- [x] P3.5: Comprehensive dataset card (`reports/V3_DATASET_CARD.md`).
-- [x] Deliverables:
-  - `reports/V3_FULL_DATASET_VALIDATION.md`
-  - `reports/V3_PHYSICS_VALIDATION.md`
-  - `reports/V3_DISTRIBUTION_AUDIT.md`
-  - `reports/V3_DATASET_CARD.md`
-  - `manifests/task_1/` to `manifests/task_4/` (train.csv, val.csv, test.csv, test_ood.csv)
+---
 
-## Phase 4: Minimal Reproducible Benchmark Infrastructure
-- [x] P4.1: Benchmark evaluation API and metric runners.
-- [x] P4.2: Execute baseline algorithms for T1, T2, T3, T4 on CPU.
-- [x] P4.3: PyTorch CPU training smoke test (lightweight ConvNet on CPU, 33.8% loss reduction in 5 epochs).
-- [x] P4.4: Benchmark protocol and reproducibility guidelines.
-- [x] Deliverables:
-  - `benchmarks/eval_phase_retrieval.py`
-  - `benchmarks/eval_denoising.py`
-  - `benchmarks/eval_inpainting.py`
-  - `benchmarks/eval_hit_classification.py`
-  - `benchmarks/run_all_benchmarks.py`
-  - `reports/BASELINE_VALIDATION.md`
-  - `reports/TRAINING_SMOKE_TEST.md`
-  - `reports/BENCHMARK_PROTOCOL.md`
+## Remediation Roadmap and Acceptance Phases
 
-## Phase 5: Limited Experimental Data Compatibility
-- [x] P5.1: Experimental source selection from CXIDB (id-62, id-81, id-91, id-164).
-- [x] P5.2: Read-only experimental CXI/HDF5 adapter (`opendiffraction/io/experimental.py`).
-- [x] P5.3: Synthetic-to-real comparison and quantitative domain gap analysis.
-- [x] P5.4: Adapter verification and automated unit testing (`tests/test_experimental_adapter.py`).
-- [x] Deliverables:
-  - `opendiffraction/io/experimental.py`
-  - `reports/EXPERIMENTAL_DATA_CANDIDATES.md`
-  - `reports/SYNTHETIC_REAL_DOMAIN_GAP.md`
-  - `reports/EXPERIMENTAL_ADAPTER_VALIDATION.md`
+### Phase A: Fail-First Defect Reproduction
+- [x] Reproduce OD-001 (F1-F6 dispatch bypass).
+- [x] Reproduce OD-002 (detector mask raw flux leakage).
+- [x] Reproduce OD-003 (clean target silent fallback).
+- [x] Reproduce OD-006 (Fresnel ASM real-space coordinate inversion).
+- [x] Implement fail-first test for OD-005 (manifest sample_id alignment).
+- [x] Implement fail-first test for OD-007 (beam center displacement vs Fourier invariance).
+- [x] Implement fail-first test for OD-008 (spherical aberration in probe).
+- [x] Implement fail-first test for OD-013 (HIO to ER phase transfer).
+- [x] Implement fail-first test for OD-016 (windowed vs global SSIM).
+- [x] Implement fail-first test for OD-017 (reconstruction correlation diagnostic).
+- [x] Implement fail-first test for OD-019 (severe mask silent reset).
+- [x] Implement fail-first test for OD-020 (quick preset profile coverage).
+
+### Phase B: Forward-Model Pipeline Revalidation
+- [x] Verify F1 Fraunhofer centering, Parseval conservation, and Friedel symmetry.
+- [x] Verify F2 partial coherence GSM lag centering and mode expansion.
+- [x] Verify F4 Fresnel ASM propagation and z=0 identity.
+- [x] Verify F5 polychromatic pink-beam spectral integration.
+- [x] Verify F6 3D volume Euler rotation and transmission projection.
+
+### Phase C: 48 Profiles and Six Scenarios Verification
+- [x] Repair OD-007: Implement true diffraction shift on detector or incident beam tilt.
+- [x] Repair OD-008: Add spherical aberration $W \propto r^4$ to `generate_probe` for V17.
+- [x] Repair OD-011: Connect S1-S6 scenarios to pipeline metadata dynamically.
+- [x] Repair OD-020: Ensure `--preset quick` exercises all 48 profiles (V01-V48).
+
+### Phase D: Detector Observability, Masks and Storage
+- [x] Enforce zero leakage barrier (`intensity_observed[~mask] == 0.0`).
+- [x] Repair OD-019: Remove silent mask reset when coverage < 20% in `masks.py`.
+- [x] Enforce explicit target contracts for Compact and Extended HDF5 storage.
+
+### Phase E: Object Identity, Splits and Reproducibility
+- [x] Ensure base object identity invariance across acquisition shots.
+- [x] Ensure 100% group-disjoint splits across train, validation, test, and test_ood.
+- [x] Validate bitwise deterministic replay from metadata seeds.
+
+### Phase F: Phase Retrieval and Evaluation Metrics
+- [x] Repair OD-013: Align Fourier phase coordinates and state transfer between HIO and ER.
+- [x] Repair OD-016: Implement standard local windowed SSIM in `metrics.py`.
+- [x] Repair OD-017: Compute Pearson correlation on reconstructed object in `eval_phase_retrieval.py`.
+- [x] Repair OD-018: Add explicit support regimes (disc, box, oracle, autocorrelation).
+
+### Phase G: Benchmark Evaluation Rebuilding
+- [x] Repair OD-005: Enforce strict `sample_id` mapping in loaders and benchmark scripts.
+- [x] Re-evaluate T1-T4 baselines on balanced manifests with 3-sigma readout noise gating.
+- [x] Maintain task scope matrix for T5-T12.
+
+### Phase H: Resource Safety and Crash Recovery
+- [x] Verify streaming `IncrementalShardWriter` peak RAM < 120 MiB.
+- [x] Verify SHA-256 configuration hash validation during shard resume.
+
+### Phase I: Figure and Visualization Provenance
+- [x] Regenerate Figures A through G from fixed seeds (300 DPI PNG + vector PDF).
+
+### Phase J: Independent Adversarial Re-Audit
+- [x] Validate 5 independent mathematical oracles.
+- [x] Document synthetic format vs real experimental CXI boundary.
+
+### Phase K: Release Consistency, CI and Documentation
+- [x] Repair OD-025: Reconcile CLI, YAML, and README sample counts and version 3.1.0.
+- [x] Repair OD-027: Update `.github/workflows/tests.yml` to run full test suite.
+- [x] Update CHANGELOG, DATASET_CARD, and README for v3.1.0.

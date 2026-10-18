@@ -31,14 +31,25 @@ def run_hit_classification_benchmark(
     if num_samples is not None and len(df_val) > num_samples:
         df_val = df_val.head(num_samples)
 
-    ds = OpenDiffractionTorchDataset(dataset_dir, split="valid", task="hit_classification", return_dict=True)
+    ds = OpenDiffractionTorchDataset(
+        dataset_dir, split=None, task="hit_classification", return_dict=True, manifest_path=manifest_path
+    )
 
     y_true_binary = []
     y_pred_binary = []
 
     t0 = time.time()
-    for idx in range(min(len(df_val), len(ds))):
-        sample = ds[idx]
+    for idx, row in df_val.iterrows():
+        sid = str(row.get("sample_id", ""))
+        if sid and hasattr(ds, "get_by_sample_id"):
+            try:
+                sample = ds.get_by_sample_id(sid)
+            except KeyError:
+                continue
+        else:
+            if idx >= len(ds):
+                break
+            sample = ds[idx]
         inp = sample["input"][0].numpy()  # (512, 512)
         target_label = sample["target"]  # label string or binary indicator
 

@@ -22,6 +22,7 @@ from opendiffraction.physics.forward import (
     simulate_diffraction,
 )
 from opendiffraction.physics.masks import composite_detector_mask
+from opendiffraction.scenarios import get_scenario_physics
 from opendiffraction.variations.profiles import PROFILE_SPECS, sample_profile_config
 from opendiffraction.variations.profiles_48 import PROFILES_48, sample_profile_48
 from opendiffraction.version import (
@@ -31,7 +32,7 @@ from opendiffraction.version import (
     SCHEMA_VERSION,
 )
 from .splits import assign_group_to_split
-from .storage import DatasetWriter
+from .storage import DatasetWriter, compute_config_fingerprint
 
 
 PRESET_CONFIGS = {
@@ -137,6 +138,7 @@ def build_master_task_plan(
                     "object_seed": object_seed,
                     "acquisition_seed": acquisition_seed,
                     "group_name": group_name,
+                    "total_objects": num_objects,
                 }
             )
             global_sample_idx += 1
@@ -175,7 +177,7 @@ def simulate_single_task(
         cfg, obj_amp, obj_phase, meta = sample_profile_48(
             profile_id=pid,
             index=task["object_index"],
-            total=1000,
+            total=task.get("total_objects", 1000),
             rng=obj_rng,
         )
         fam = meta.get("group_name", "Specimen")
@@ -185,7 +187,7 @@ def simulate_single_task(
         cfg, fam, dens, subtype = sample_profile_config(
             profile_id=pid,
             index_within_profile=task["object_index"],
-            total_in_profile=1000,
+            total_in_profile=task.get("total_objects", 1000),
             rng=obj_rng,
         )
         obj_amp, _ = generate_procedural_object(
@@ -202,15 +204,13 @@ def simulate_single_task(
     # Multi-acquisition physical variations
     # acq 0: Reference condition
     # acq 1: Low photon flux / high shot noise
-    # acq 2: Coherence damping & detector gaps
+    # acq 2: Coherence damping
     # acq 3: Higher readout noise & beam displacement
     if acq_idx == 1:
         cfg.photon_budget = max(1e4, cfg.photon_budget * 0.1)
     elif acq_idx == 2:
         if not np.isinf(cfg.coherence_length):
             cfg.coherence_length = max(30.0, cfg.coherence_length * 0.6)
-        cfg.include_module_gaps = True
-        cfg.gap_width = 4
     elif acq_idx == 3:
         cfg.readout_std = cfg.readout_std * 1.5
         cfg.beam_center_offset = (
@@ -218,20 +218,15 @@ def simulate_single_task(
             float(acq_rng.uniform(-2.0, 2.0)),
         )
 
-    # Forward physical simulation
-    sim_res = simulate_diffraction(obj_amp, cfg, rng=acq_rng, object_phase=obj_phase)
-
-    # Check for holder arm in realistic profiles
-    if meta.get("holder_arm", False) or acq_idx == 2:
-        arm_mask = composite_detector_mask(
-            (512, 512),
-            include_beam_stop=True,
-            include_holder_arm=True,
-            arm_width=6,
-            rng=acq_rng,
-        )
-        sim_res.valid_mask &= arm_mask
-        sim_res.intensity_measured *= sim_res.valid_mask
+    # Forward physical simulation dispatched to profile forward_model
+    sim_res = simulate_diffraction(
+        obj_amp,
+        cfg,
+        rng=acq_rng,
+        object_phase=obj_phase,
+        forward_model=fwd_model,
+        metadata=meta,
+    )
 
     sample_dict = {
         "object_amplitude": sim_res.object_amplitude,
@@ -240,9 +235,13 @@ def simulate_single_task(
         "target_physical": sim_res.target_physical,
         "intensity_ideal": sim_res.intensity_ideal,
         "intensity_expected": sim_res.intensity_expected,
-        "intensity_measured": sim_res.intensity_measured,
+        "intensity_raw": sim_res.intensity_raw,
+        "intensity_observed": sim_res.intensity_observed,
+        "intensity_measured": sim_res.intensity_observed,
         "valid_mask": sim_res.valid_mask,
     }
+
+    scen_phys = get_scenario_physics(task["profile_id"], meta)
 
     manifest_record = {
         "sample_id": task["sample_id"],
@@ -253,6 +252,8 @@ def simulate_single_task(
         "split": task["split"],
         "profile_id": task["profile_id"],
         "variation_family": task["profile_id"],
+        "scenario_id": scen_phys["scenario_id"],
+        "scenario_name": scen_phys["scenario_name"],
         "object_family": fam,
         "density_type": meta.get("density_type", "continuous"),
         "forward_model": fwd_model,
@@ -273,12 +274,13 @@ def simulate_single_task(
         "random_seed": task["acquisition_seed"],
         "object_seed": task["object_seed"],
         "acquisition_seed": task["acquisition_seed"],
-        "wavelength_m": 1.24e-10,  # 10 keV typical X-ray
-        "pixel_pitch_m": 7.5e-5,  # 75 um pixel size
-        "detector_distance_m": 0.5,
+        "photon_energy_kev": f"{scen_phys['photon_energy_kev']:.3f}",
+        "wavelength_m": float(scen_phys["wavelength_m"]),
+        "pixel_pitch_m": float(scen_phys["pixel_pitch_m"]),
+        "detector_distance_m": float(scen_phys["detector_distance_m"]),
         "ground_truth_available": True,
-        "shard_name": task["shard_name"],
-        "row_index": task["row_index"],
+        "shard_name": task.get("shard_name", "shard_000.h5"),
+        "row_index": task.get("row_index", 0),
         "simulation_version": GENERATOR_VERSION,
         "schema_version": SCHEMA_VERSION,
         "model_compatibility": "DPR_and_Standard_CDI",
@@ -340,27 +342,41 @@ def generate_dataset(
         [f for f in os.listdir(data_dir) if f.endswith(".h5")] if os.path.exists(data_dir) else []
     )
 
-    if not resume:
-        if existing_shards and not overwrite:
+    if overwrite:
+        if os.path.exists(data_dir):
+            shutil.rmtree(data_dir)
+        os.makedirs(data_dir, exist_ok=True)
+        if os.path.exists(writer.metadata_csv):
+            os.remove(writer.metadata_csv)
+        if os.path.exists(writer.progress_file):
+            os.remove(writer.progress_file)
+    elif not resume:
+        if existing_shards:
             raise RuntimeError(
                 f"Output directory {output_dir} already contains {len(existing_shards)} data shards. "
                 "Specify resume=True to continue, or overwrite=True to restart cleanly."
             )
-        if overwrite and os.path.exists(data_dir):
-            shutil.rmtree(data_dir)
-            os.makedirs(data_dir, exist_ok=True)
-            if os.path.exists(writer.metadata_csv):
-                os.remove(writer.metadata_csv)
-            if os.path.exists(writer.progress_file):
-                os.remove(writer.progress_file)
 
     # 1. Build immutable master plan
+    acq_per_obj = 1 if (preset == "quick" or total_samples <= 48) else 4
     master_tasks, shards = build_master_task_plan(
         total_samples=total_samples,
         seed=seed,
         profiles_mode=profiles_mode,
-        acquisitions_per_object=4,
+        acquisitions_per_object=acq_per_obj,
         shard_size=shard_size,
+    )
+
+    config_fingerprint = compute_config_fingerprint(
+        {
+            "generator_version": GENERATOR_VERSION,
+            "schema_version": SCHEMA_VERSION,
+            "storage_mode": storage_mode,
+            "profiles_mode": profiles_mode,
+            "seed": seed,
+            "total_samples": total_samples,
+            "shard_size": shard_size,
+        }
     )
 
     start_time = time.time()
@@ -374,31 +390,38 @@ def generate_dataset(
         if first_shard_path is None:
             first_shard_path = shard_path
 
-        # 2. Check if shard is already complete and verified
-        if resume and writer.verify_shard(shard_path, len(shard_tasks)):
+        # 2. Check if shard is already complete and verified with matching config
+        if resume and writer.verify_shard(
+            shard_path, len(shard_tasks), expected_config_hash=config_fingerprint
+        ):
             skipped_shards += 1
             continue
 
-        # 3. Simulate shard tasks
-        shard_results: list[dict[str, Any]] = []
+        # 3. Stream simulation directly to incremental shard writer with bounded RAM
+        inc_writer = writer.create_incremental_shard_writer(
+            shard_path,
+            total_samples=len(shard_tasks),
+            config_fingerprint=config_fingerprint,
+            has_phase=True,
+        )
         manifest_rows: list[dict[str, Any]] = []
 
         if num_workers > 1:
             with ThreadPoolExecutor(max_workers=num_workers) as executor:
-                sim_outputs = list(
-                    executor.map(lambda t: simulate_single_task(t, profiles_mode), shard_tasks)
+                sim_outputs = executor.map(
+                    lambda t: simulate_single_task(t, profiles_mode), shard_tasks
                 )
-            for s_dict, m_rec in sim_outputs:
-                shard_results.append(s_dict)
-                manifest_rows.append(m_rec)
+                for row_idx, (sample_dict, manifest_rec) in enumerate(sim_outputs):
+                    inc_writer.write_sample(row_idx, sample_dict)
+                    manifest_rows.append(manifest_rec)
         else:
-            for task in tqdm(shard_tasks, desc=f"Simulating {shard_name}"):
+            for row_idx, task in enumerate(tqdm(shard_tasks, desc=f"Simulating {shard_name}")):
                 sample_dict, manifest_rec = simulate_single_task(task, profiles_mode)
-                shard_results.append(sample_dict)
+                inc_writer.write_sample(row_idx, sample_dict)
                 manifest_rows.append(manifest_rec)
 
-        # 4. Atomic write and verified commit
-        writer.write_shard_atomic(shard_path, shard_results)
+        # 4. Atomic commit and verified manifest update
+        inc_writer.finalize()
         writer.append_manifest_rows(manifest_rows)
         writer.update_progress([t["sample_id"] for t in shard_tasks])
         total_written += len(shard_tasks)

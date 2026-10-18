@@ -3,7 +3,7 @@
 ## Dataset Title
 **OpenDiffraction: Physics-Based Synthetic Coherent Diffraction Patterns for Phase Retrieval and Image Reconstruction**
 
-- **Dataset Version**: 2.0.0
+- **Dataset Version**: 3.1.0 (Remediated Scientific Release)
 - **Creator & Principal Maintainer**: OpenDiffraction computational optics and scientific machine learning contributors (Principal Maintainer: [Muhammad Kamal](https://github.com/KindlyGentleman), GitHub: `@KindlyGentleman`, Kaggle: `@hamadmuhammadkamal`)
 - **Dataset DOI**: [10.34740/kaggle/dsv/20811988](https://doi.org/10.34740/kaggle/dsv/20811988)
 - **Primary Domain**: Coherent Diffraction Imaging (CDI), Computational Optics, Phase Retrieval, Machine Learning Inverse Problems
@@ -55,20 +55,20 @@ OpenDiffraction establishes an open, reproducible, parameter-controlled benchmar
 
 ## 3. Physical Forward Models (F1 - F6)
 
-OpenDiffraction 2.0 implements 6 modular, physically grounded forward simulation models:
+OpenDiffraction 3.1 implements 6 modular, physically grounded forward simulation models with active physics dispatching and formal mathematical oracle validation:
 
-- **Model F1 (Fraunhofer Coherent Diffraction)**: Far-field intensity from real or complex transmission densities.
-- **Model F2 (Partial-Coherence Diffraction)**: Gaussian Schell-model (GSM) autocorrelation damping centered at zero lag, or orthogonal multimode decomposition.
-- **Model F3 (Thin-Object Coherent Transmission)**: Probe field multiplication including wavefront curvature, astigmatism, coma, and pointing jitter.
-- **Model F4 (Fresnel Diffraction)**: Near-field propagation in SI units (wavelength, distance, pixel size) with Shannon sampling bounds.
-- **Model F5 (Polychromatic Diffraction)**: Wavelength-integrated intensity accounting for reciprocal-space radial coordinate dilation across pink-beam bandwidths.
-- **Model F6 (3D Particle Scattering)**: 3D scalar density volumes with continuous Euler rotation and Born projection approximation.
+- **Model F1 (Fraunhofer Coherent Diffraction)**: Far-field intensity from 2D complex transmission functions via discrete Fourier transform; verified against analytical circular aperture Airy disk and Parseval energy conservation.
+- **Model F2 (Partial-Coherence Diffraction)**: Gaussian Schell-model (GSM) mutual coherence damping centered at zero spatial frequency lag, or orthogonal multimode decomposition.
+- **Model F3 (Thin-Object Coherent Transmission)**: Probe field multiplication including wavefront curvature, astigmatism, coma, and stochastic sub-pixel pointing jitter.
+- **Model F4 (Fresnel Diffraction)**: Near-field propagation via Angular Spectrum Method (ASM) in SI units (wavelength, propagation distance, pixel pitch) with centered coordinate grids; verified to identity at z = 0.
+- **Model F5 (Polychromatic Diffraction)**: Pink-beam finite bandwidth spectral integration accounting for reciprocal-space radial coordinate dilation across multiple wavelength channels.
+- **Model F6 (3D Particle Scattering)**: 3D scalar density volumes with continuous Euler rotation and transmission projection; guarantees exact bitwise object invariance across multiple acquisition shots.
 
 ---
 
 ## 4. 48 Controlled Variation Profiles (V01 - V48)
 
-OpenDiffraction 2.0 organizes 48 labeled experimental profiles across 6 physical groups:
+OpenDiffraction 3.1 organizes 48 labeled experimental profiles across 6 physical groups:
 
 1. **Group 1: Real-World Specimens (V01 - V12)**:
    - V01: Cell-Like Biological Phantoms (membrane, nucleus, organelles).
@@ -175,27 +175,57 @@ The released package contains 48 curated samples (1 sample per variation profile
 
 ## 6. Data Format & Semantic Specifications
 
-Data are stored in compressed HDF5 shards (`train_000.h5`, `valid_000.h5`, `test_000.h5`, `test_ood_000.h5`):
+OpenDiffraction 3.1 establishes a strict zero-leakage contract and supports two standardized HDF5 storage profiles: Compact Storage (default) and Extended Storage (`--full-physics`).
+
+### 6.1 The Zero Information Leakage Guarantee
+In both formats, the observable input fields `input` and `intensity_observed` have detector defects, module gaps, and center beamstops strictly zeroed out:
+$$\text{intensity\_observed}[\sim\text{mask}] = 0.0$$
+Unmasked detector readouts (photons plus noise before beamstop interception) are preserved exclusively under `intensity_raw` in Extended Storage for specialized inpainting evaluations (e.g., Task T3). For downstream pipelines, `intensity_measured` provides a zero-leakage property alias pointing directly to `intensity_observed`.
+
+### 6.2 Compact Storage Schema (Default)
+Optimized for storage efficiency and fast supervised training. All clean target fields can be deterministically re-generated on demand using the recorded PRNG seeds in `metadata.csv`.
 
 ```text
 /
 ├── input: float32, (N, 1, 512, 512)
-│   Noisy unmasked detector readouts in photon counts.
+│   Masked detector observation (masked pixels strictly 0.0; zero leakage).
 ├── target: float32, (N, 1, 64, 64)
-│   Real-space object density, scaled per DPR convention (false_scale=True).
-├── mask: bool, (N, 1, 512, 512)
-│   Detector validity mask. True = valid pixel, False = missing/beamstop.
-├── object_amplitude: float32, (N, 1, 64, 64)
-│   Unscaled true ground-truth amplitude in [0, 1].
+│   DPR-compatible real-space object density scaled by scale_factor.
+└── mask: bool, (N, 1, 512, 512)
+    Detector validity mask. True = valid pixel, False = missing/beamstop.
+```
+
+### 6.3 Extended Storage Schema (--full-physics)
+Comprehensive scientific schema containing all intermediate optical states, noise fields, and unscaled physical ground-truth quantities.
+
+```text
+/
+├── input: float32, (N, 1, 512, 512)
+│   Masked detector observation (alias to intensity_observed; zero leakage).
+├── intensity_observed: float32, (N, 1, 512, 512)
+│   Masked detector readout with intensity_observed[~mask] == 0.0.
+├── intensity_raw: float32, (N, 1, 512, 512)
+│   Unmasked detector readout (photons + noise) prior to masking.
+├── intensity_measured: float32, (N, 1, 512, 512)
+│   Zero-leakage alias to intensity_observed.
 ├── intensity_ideal: float32, (N, 1, 512, 512)
 │   Ideal uncorrupted Fraunhofer diffraction intensity |A(q)|^2.
 ├── intensity_expected: float32, (N, 1, 512, 512)
-│   Partially coherent photon rate lambda_i before stochastic sampling.
-├── intensity_measured: float32, (N, 1, 512, 512)
-│   Noisy detector readouts (signed float32).
-└── valid_mask: bool, (N, 1, 512, 512)
-    True for valid pixels, False for detector defects.
+│   Partially coherent photon rate lambda_i before stochastic Poisson sampling.
+├── mask: bool, (N, 1, 512, 512)
+│   Detector validity mask. True = valid pixel, False = missing/beamstop.
+├── valid_mask: bool, (N, 1, 512, 512)
+│   Compatibility alias for mask.
+├── target: float32, (N, 1, 64, 64)
+│   DPR-compatible real-space target density.
+├── object_amplitude: float32, (N, 1, 64, 64)
+│   Unscaled physical ground-truth object amplitude in [0, 1].
+└── object_phase: float32, (N, 1, 64, 64)
+    True object phase in radians.
 ```
+
+### 6.4 DPR Scaling Convention
+Upstream DPR trains on targets scaled by `scale_factor` ($O \cdot s$), which normalizes the maximum intensity or flux across batches. OpenDiffraction explicitly distinguishes between this training scaling convention (`target`) and the physical unscaled amplitude ground truth (`object_amplitude`). Supervised models evaluating against unscaled physical quantities should reference `object_amplitude`.
 
 ---
 

@@ -284,8 +284,11 @@ def composite_detector_mask(
         )
         mask &= irreg_mask
 
-    # Ensure mask never completely wipes out the detector
-    if np.mean(mask) < 0.2:
-        mask[:] = True
+    # Ensure mask never completely wipes out every single pixel on the detector
+    if not np.any(mask):
+        mask[0, :] = True
+        mask[-1, :] = True
+        mask[:, 0] = True
+        mask[:, -1] = True
 
     return mask
